@@ -18,6 +18,7 @@ struct SessionView: View {
   @State private var lastBoundaryKey: String?
   @State private var isComplete = false
   @State private var showGroundingIntro = false
+  @State private var startedContinuous = false
 
   private let tick = Timer.publish(every: 0.08, on: .main, in: .common).autoconnect()
   private let introDuration: TimeInterval = 3
@@ -30,6 +31,10 @@ struct SessionView: View {
     routine.outcomeFamily.needsGrounding
   }
 
+  private var isContinuousCue: Bool {
+    cueStyle.continuous
+  }
+
   var body: some View {
     Group {
       if showGroundingIntro {
@@ -39,6 +44,10 @@ struct SessionView: View {
       }
     }
     .onAppear(perform: handleAppear)
+    .onDisappear {
+      AudioCuePlayer.shared.stopSustained()
+      BreathHaptics.shared.stop()
+    }
     .onReceive(tick, perform: handleTick)
     .animation(.easeInOut(duration: 0.4), value: scheme.id)
   }
@@ -140,31 +149,66 @@ struct SessionView: View {
     .frame(height: 1)
   }
 
+  /// The orb settles here at full exhale instead of collapsing to a point —
+  /// the breath guide should rest, never vanish.
+  private let orbRestScale: Double = 0.32
+
+  /// The breathing orb: a quiet vessel ring, a soft halo that swells, and a
+  /// gradient sphere with the count nested inside it.
+  @ViewBuilder
+  private func breathOrb(size: CGFloat, scale: Double, halo: Double, digit: Int) -> some View {
+    Circle()
+      .stroke(scheme.ink.opacity(0.4), lineWidth: 1)
+      .frame(width: size, height: size)
+
+    Circle()
+      .fill(scheme.ink)
+      .frame(width: size, height: size)
+      .scaleEffect(scale * 1.04)
+      .blur(radius: 26)
+      .opacity(halo)
+
+    Circle()
+      .fill(
+        RadialGradient(
+          colors: [scheme.ink.opacity(0.86), scheme.ink],
+          center: UnitPoint(x: 0.5, y: 0.42),
+          startRadius: 0,
+          endRadius: size * 0.6
+        )
+      )
+      .frame(width: size, height: size)
+      .scaleEffect(scale)
+
+    Text("\(digit)")
+      .font(BreatheFont.display(size * 0.52, weight: .ultraLight))
+      .foregroundStyle(Color.white)
+      .monospacedDigit()
+      .tracking(-4)
+      .blendMode(.difference)
+      .scaleEffect(scale)
+      .id(digit)
+      .transition(.opacity.animation(.easeOut(duration: reduceMotion ? 0 : 0.22)))
+  }
+
   private func introStage(remaining: TimeInterval) -> some View {
     let digit = max(1, Int(ceil(remaining)))
+    // Settle down to the inhale's starting size across the countdown, so the
+    // first breath flows out of the intro with no jump.
+    let remainingFraction = min(max(remaining / introDuration, 0), 1)
+    let scale = reduceMotion ? 0.4 : orbRestScale + 0.08 * remainingFraction
 
     return VStack(spacing: 28) {
       GeometryReader { geometry in
         let size = min(geometry.size.width * 0.78, 288)
 
         ZStack {
-          Circle()
-            .stroke(scheme.ink, lineWidth: 1)
-            .frame(width: size, height: size)
-
-          Circle()
-            .fill(scheme.ink)
-            .frame(width: size, height: size)
-            .scaleEffect(reduceMotion ? 0.18 : 0.18 + (Double(digit) * 0.02))
-
-          Text("\(digit)")
-            .font(BreatheFont.display(size * 0.58, weight: .ultraLight))
-            .foregroundStyle(Color.white)
-            .monospacedDigit()
-            .tracking(-4)
-            .blendMode(.difference)
-            .id(digit)
-            .transition(.opacity.animation(.easeOut(duration: reduceMotion ? 0 : 0.22)))
+          breathOrb(
+            size: size,
+            scale: scale,
+            halo: reduceMotion ? 0.12 : 0.08 + 0.06 * remainingFraction,
+            digit: digit
+          )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
       }
@@ -184,27 +228,16 @@ struct SessionView: View {
     VStack(spacing: 28) {
       GeometryReader { geometry in
         let size = min(geometry.size.width * 0.78, 288)
-        let scale = reduceMotion ? 0.5 : state.pupilScale
+        let raw = reduceMotion ? 0.5 : state.pupilScale
+        let scale = orbRestScale + (1 - orbRestScale) * raw
 
         ZStack {
-          Circle()
-            .stroke(scheme.ink, lineWidth: 1)
-            .frame(width: size, height: size)
-
-          Circle()
-            .fill(scheme.ink)
-            .frame(width: size, height: size)
-            .scaleEffect(scale)
-
-          Text("\(state.countdownDigit)")
-            .font(BreatheFont.display(size * 0.58, weight: .ultraLight))
-            .foregroundStyle(Color.white)
-            .monospacedDigit()
-            .tracking(-4)
-            .blendMode(.difference)
-            .scaleEffect(reduceMotion ? 1 : 0.97 + (scale * 0.03))
-            .id(state.countdownDigit)
-            .transition(.opacity.animation(.easeOut(duration: reduceMotion ? 0 : 0.22)))
+          breathOrb(
+            size: size,
+            scale: scale,
+            halo: reduceMotion ? 0.16 : 0.09 + 0.17 * raw,
+            digit: state.countdownDigit
+          )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
       }
@@ -323,14 +356,29 @@ struct SessionView: View {
     VStack(spacing: 26) {
       Spacer()
 
-      ZStack {
-        Circle()
-          .stroke(scheme.ink, lineWidth: 1)
-          .frame(width: 168, height: 168)
-        Image(systemName: "checkmark")
-          .font(.system(size: 48, weight: .light))
-          .foregroundStyle(scheme.ink)
+      GeometryReader { geometry in
+        let size = min(geometry.size.width * 0.78, 288)
+
+        ZStack {
+          // The same vessel ring as the breathing orb, now come to rest.
+          Circle()
+            .stroke(scheme.ink.opacity(0.4), lineWidth: 1)
+            .frame(width: size, height: size)
+
+          Circle()
+            .fill(scheme.ink)
+            .frame(width: size, height: size)
+            .scaleEffect(0.62)
+            .blur(radius: 26)
+            .opacity(0.12)
+
+          Image(systemName: "checkmark")
+            .font(.system(size: size * 0.26, weight: .ultraLight))
+            .foregroundStyle(scheme.ink)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
       }
+      .frame(height: 304)
 
       VStack(spacing: 8) {
         Text("Complete")
@@ -363,7 +411,7 @@ struct SessionView: View {
       .padding(.bottom, 34)
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(scheme.paper.opacity(0.97))
+    .background(scheme.paper)
   }
 
   private func sessionProgress(elapsed: TimeInterval) -> Double {
@@ -411,6 +459,18 @@ struct SessionView: View {
       return
     }
 
+    // A continuous cue plays as one seamless looping tone, started once the
+    // countdown ends rather than re-triggered at every boundary.
+    if isContinuousCue, !startedContinuous {
+      startedContinuous = true
+      AudioCuePlayer.shared.startContinuous(
+        audioCue,
+        phases: routine.phases,
+        cycleDuration: routine.cycleDuration,
+        volumeScale: cueStyle.volumeScale
+      )
+    }
+
     let state = routine.state(at: elapsed)
     guard state.boundaryKey != lastBoundaryKey else { return }
     lastBoundaryKey = state.boundaryKey
@@ -418,14 +478,35 @@ struct SessionView: View {
   }
 
   private func triggerBoundaryCue(for phase: BreathPhase) {
-    if hapticsEnabled, let haptic = hapticStyle(for: cueStyle) {
-      let generator = UIImpactFeedbackGenerator(style: haptic.style)
-      generator.impactOccurred(intensity: haptic.intensity)
+    triggerBoundaryHaptic(for: phase)
+    // Continuous cues are a single sustained tone, not per-boundary chimes.
+    if !isContinuousCue {
+      AudioCuePlayer.shared.play(audioCue, for: phase.kind, phaseDuration: phase.seconds, style: cueStyle)
     }
-    AudioCuePlayer.shared.play(audioCue, for: phase.kind, phaseDuration: phase.seconds, style: cueStyle)
   }
 
-  private func hapticStyle(
+  private func triggerBoundaryHaptic(for phase: BreathPhase) {
+    guard hapticsEnabled, let feel = breathFeel(for: cueStyle) else { return }
+
+    // On haptic-capable devices the breath is felt as a swell; otherwise fall
+    // back to a single impact tap at the boundary.
+    if BreathHaptics.shared.isSupported {
+      BreathHaptics.shared.playBreath(phase: phase.kind, duration: phase.seconds, feel: feel)
+    } else if let impact = impactStyle(for: cueStyle) {
+      UIImpactFeedbackGenerator(style: impact.style).impactOccurred(intensity: impact.intensity)
+    }
+  }
+
+  private func breathFeel(for cue: CueStyle) -> BreathHaptics.Feel? {
+    switch cue {
+    case .soft: return BreathHaptics.Feel(peakIntensity: 0.35, sharpness: 0.1)
+    case .coherent: return BreathHaptics.Feel(peakIntensity: 0.3, sharpness: 0.1)
+    case .crisp: return BreathHaptics.Feel(peakIntensity: 0.6, sharpness: 0.4)
+    case .silent: return nil
+    }
+  }
+
+  private func impactStyle(
     for cue: CueStyle
   ) -> (style: UIImpactFeedbackGenerator.FeedbackStyle, intensity: CGFloat)? {
     switch cue {
@@ -445,6 +526,7 @@ struct SessionView: View {
 
   private func completeSession() {
     isComplete = true
+    BreathHaptics.shared.stop()
     if hapticsEnabled {
       UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
@@ -452,11 +534,21 @@ struct SessionView: View {
   }
 
   private func handleAppear() {
+    AudioCuePlayer.shared.prepare(
+      cue: audioCue,
+      style: cueStyle,
+      phases: routine.phases,
+      cycleDuration: routine.cycleDuration
+    )
+    if hapticsEnabled { BreathHaptics.shared.prepare() }
     restart()
     showGroundingIntro = needsGrounding
   }
 
   private func restart() {
+    AudioCuePlayer.shared.stopSustained()
+    BreathHaptics.shared.stop()
+    startedContinuous = false
     startDate = Date().addingTimeInterval(introDuration)
     pauseStarted = nil
     accumulatedPause = 0
@@ -474,8 +566,11 @@ struct SessionView: View {
     if let pauseStarted {
       accumulatedPause += Date().timeIntervalSince(pauseStarted)
       self.pauseStarted = nil
+      AudioCuePlayer.shared.setSustainedPaused(false)
     } else {
       pauseStarted = Date()
+      AudioCuePlayer.shared.setSustainedPaused(true)
+      BreathHaptics.shared.stop()
     }
   }
 }

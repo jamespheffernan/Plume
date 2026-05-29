@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		10E3430CD730E5B5AC1E3A8E /* BreatheClockRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9984281014C849260347145 /* BreatheClockRootView.swift */; };
 		1B73849B265AEBCF752B51E8 /* Manrope-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B2CA4F4A6D88DA482553B38E /* Manrope-Variable.ttf */; };
+		1DC33EDB7BD970D0A1F6DF97 /* BreathHaptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9003CF209CA48B48F60E6DCE /* BreathHaptics.swift */; };
 		292A3AA0075007B5D1CE7C64 /* SessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B850B4D657D5B4F0EBA1FC6D /* SessionView.swift */; };
 		32E408B820263FF6D6432775 /* AudioCuePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 599AC1DBD2684D5AE704A4B2 /* AudioCuePlayer.swift */; };
 		4DFC4AE306C2E59144C84586 /* AssessmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2500373E282F841EB2D6FD /* AssessmentView.swift */; };
@@ -28,6 +29,7 @@
 		27708907028F0FD4BBF58FEB /* Fraunces-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fraunces-Variable.ttf"; sourceTree = "<group>"; };
 		599AC1DBD2684D5AE704A4B2 /* AudioCuePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCuePlayer.swift; sourceTree = "<group>"; };
 		61D3C46491DEB9065E0F9900 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		9003CF209CA48B48F60E6DCE /* BreathHaptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreathHaptics.swift; sourceTree = "<group>"; };
 		9839F2161868D0FDE29F13E4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9AB37F983CB245C70E5CC10C /* BreatheClockApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreatheClockApp.swift; sourceTree = "<group>"; };
 		9F8BBD911E43011201EB9FF8 /* BreatheClock.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BreatheClock.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -84,6 +86,7 @@
 			isa = PBXGroup;
 			children = (
 				599AC1DBD2684D5AE704A4B2 /* AudioCuePlayer.swift */,
+				9003CF209CA48B48F60E6DCE /* BreathHaptics.swift */,
 				CF49433358E9D83E66B070AA /* Theme.swift */,
 			);
 			path = Support;
@@ -202,6 +205,7 @@
 			files = (
 				4DFC4AE306C2E59144C84586 /* AssessmentView.swift in Sources */,
 				32E408B820263FF6D6432775 /* AudioCuePlayer.swift in Sources */,
+				1DC33EDB7BD970D0A1F6DF97 /* BreathHaptics.swift in Sources */,
 				BF0FDF8969F50D867A16F679 /* BreatheClockApp.swift in Sources */,
 				10E3430CD730E5B5AC1E3A8E /* BreatheClockRootView.swift in Sources */,
 				B09038832E22D48E2A79C4CA /* BreathingModels.swift in Sources */,
