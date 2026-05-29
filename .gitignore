@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# Xcode build output
+build/
+DerivedData/
+*.moved-aside
+
+# Xcode per-user state (kept out of version control)
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Dependency managers (unused here, ignored defensively)
+Pods/
+Carthage/Build/

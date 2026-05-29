@@ -1,0 +1,349 @@
+import SwiftUI
+
+struct SetupView: View {
+  let scheme: BreatheScheme
+  let routine: Routine
+  @Binding var selectedDuration: SessionDuration
+  let onBack: () -> Void
+  let onBegin: () -> Void
+
+  @State private var showingSafetyGate = false
+
+  var body: some View {
+    VStack(spacing: 0) {
+      topBar
+        .padding(.horizontal, 24)
+        .padding(.top, 24)
+
+      Spacer(minLength: 34)
+
+      VStack(spacing: 0) {
+        Text(routine.name)
+          .font(BreatheFont.display(56, weight: .light, italic: true))
+          .foregroundStyle(scheme.ink)
+          .tracking(-1.1)
+          .lineLimit(1)
+          .minimumScaleFactor(0.55)
+          .padding(.bottom, 16)
+
+        Text(routine.description)
+          .font(BreatheFont.display(16, weight: .regular))
+          .foregroundStyle(scheme.ink)
+          .multilineTextAlignment(.center)
+          .lineSpacing(4)
+          .frame(maxWidth: 286)
+          .padding(.bottom, 38)
+
+        if routine.isTimed {
+          patternBlock
+        } else {
+          untimedBlock
+        }
+      }
+      .padding(.horizontal, 28)
+
+      Spacer(minLength: 28)
+
+      if routine.isTimed {
+        durationPicker
+          .padding(.horizontal, 24)
+          .padding(.bottom, 26)
+
+        if let note = routine.safetyNote, !routine.requiresAcknowledgement {
+          safetyNoteBlock(note)
+        }
+
+        beginButton
+          .padding(.horizontal, 24)
+          .padding(.bottom, 30)
+      } else {
+        descriptionOnlyFooter
+          .padding(.horizontal, 24)
+          .padding(.bottom, 30)
+      }
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(scheme.paper)
+    .animation(.easeInOut(duration: 0.4), value: scheme.id)
+    .sheet(isPresented: $showingSafetyGate) {
+      safetyGateView
+    }
+  }
+
+  private var topBar: some View {
+    HStack {
+      Button(action: onBack) {
+        HStack(spacing: 8) {
+          Image(systemName: "chevron.left")
+            .font(.system(size: 12, weight: .semibold))
+          Text("Library")
+            .font(BreatheFont.utility(12, weight: .regular))
+            .tracking(2.1)
+        }
+        .textCase(.uppercase)
+        .foregroundStyle(scheme.muted)
+        .frame(height: 44)
+        .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+
+      Spacer()
+    }
+  }
+
+  @ViewBuilder
+  private var patternBlock: some View {
+    if routine.phases.count > 6 {
+      compactPatternBlock
+    } else {
+      detailedPatternBlock
+    }
+  }
+
+  private var detailedPatternBlock: some View {
+    VStack(spacing: 11) {
+      HStack(alignment: .firstTextBaseline, spacing: 18) {
+        ForEach(Array(routine.phases.enumerated()), id: \.offset) { index, phase in
+          if index > 0 {
+            Text("·")
+              .font(BreatheFont.display(28, weight: .light))
+              .foregroundStyle(scheme.muted)
+              .baselineOffset(8)
+          }
+          Text(phase.displaySeconds)
+            .font(BreatheFont.display(56, weight: .ultraLight))
+            .foregroundStyle(scheme.ink)
+            .monospacedDigit()
+            .minimumScaleFactor(0.72)
+        }
+      }
+      .lineLimit(1)
+
+      HStack(spacing: 22) {
+        ForEach(Array(routine.phases.enumerated()), id: \.offset) { _, phase in
+          Text(phase.label)
+            .font(BreatheFont.utility(10, weight: .light))
+            .foregroundStyle(scheme.muted)
+            .tracking(2.7)
+            .textCase(.uppercase)
+            .frame(minWidth: 52)
+        }
+      }
+      .lineLimit(1)
+      .minimumScaleFactor(0.65)
+    }
+  }
+
+  private var compactPatternBlock: some View {
+    VStack(spacing: 12) {
+      Text(routine.patternText)
+        .font(BreatheFont.display(34, weight: .light))
+        .foregroundStyle(scheme.ink)
+        .monospacedDigit()
+        .multilineTextAlignment(.center)
+        .lineLimit(3)
+        .minimumScaleFactor(0.58)
+
+      Text("Sequence")
+        .font(BreatheFont.utility(10, weight: .light))
+        .foregroundStyle(scheme.muted)
+        .tracking(2.7)
+        .textCase(.uppercase)
+    }
+  }
+
+  private var untimedBlock: some View {
+    VStack(spacing: 10) {
+      Text("Untimed")
+        .font(BreatheFont.display(42, weight: .light, italic: true))
+        .foregroundStyle(scheme.ink)
+
+      Text("Description only")
+        .font(BreatheFont.utility(10, weight: .light))
+        .foregroundStyle(scheme.muted)
+        .tracking(2.7)
+        .textCase(.uppercase)
+    }
+  }
+
+  private var durationPicker: some View {
+    VStack(spacing: 15) {
+      Text("Duration")
+        .font(BreatheFont.utility(10, weight: .regular))
+        .foregroundStyle(scheme.muted)
+        .tracking(3.1)
+        .textCase(.uppercase)
+
+      HStack(spacing: 5) {
+        ForEach(SessionDuration.options) { option in
+          Button {
+            selectedDuration = option
+          } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+              Text(option.label)
+                .font(BreatheFont.display(18, weight: selectedDuration == option ? .regular : .light))
+              if let unit = option.unit {
+                Text(unit)
+                  .font(BreatheFont.utility(10, weight: .regular))
+                  .tracking(0.8)
+                  .textCase(.uppercase)
+              }
+            }
+            .foregroundStyle(selectedDuration == option ? scheme.ink : scheme.muted)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .overlay(alignment: .bottom) {
+              Rectangle()
+                .fill(selectedDuration == option ? scheme.ink : Color.clear)
+                .frame(height: 1)
+            }
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel(option.seconds == nil ? "Infinite" : "\(option.label) minutes")
+        }
+      }
+
+      if let alignmentText = routine.alignmentText(for: selectedDuration) {
+        Text(alignmentText)
+          .font(BreatheFont.utility(10, weight: .light))
+          .foregroundStyle(scheme.muted)
+          .tracking(1.5)
+          .textCase(.uppercase)
+          .padding(.top, 2)
+      } else if routine.hasHoldPhases {
+        Text("Audio plays for hold phases too")
+          .font(BreatheFont.utility(10, weight: .light))
+          .foregroundStyle(scheme.muted)
+          .tracking(1.5)
+          .textCase(.uppercase)
+          .padding(.top, 2)
+      }
+    }
+  }
+
+  private var beginButton: some View {
+    Button(action: handleBegin) {
+      HStack(spacing: 12) {
+        Text("Begin")
+          .font(BreatheFont.display(19, weight: .regular, italic: true))
+        Image(systemName: "chevron.right")
+          .font(.system(size: 13, weight: .semibold))
+      }
+      .foregroundStyle(scheme.paper)
+      .frame(maxWidth: .infinity)
+      .frame(height: 64)
+      .background(Capsule().fill(scheme.ink))
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel("Begin \(routine.name)")
+  }
+
+  private var descriptionOnlyFooter: some View {
+    Text("No timed cycle yet")
+      .font(BreatheFont.utility(11, weight: .medium))
+      .foregroundStyle(scheme.ink)
+      .tracking(3)
+      .textCase(.uppercase)
+      .frame(maxWidth: .infinity)
+      .frame(height: 64)
+      .overlay {
+        Capsule()
+          .stroke(scheme.hairline, lineWidth: 1)
+      }
+  }
+
+  private func safetyNoteBlock(_ note: String) -> some View {
+    Text(note)
+      .font(BreatheFont.utility(11, weight: .light))
+      .foregroundStyle(scheme.muted)
+      .multilineTextAlignment(.center)
+      .lineSpacing(3)
+      .fixedSize(horizontal: false, vertical: true)
+      .frame(maxWidth: 300)
+      .padding(.horizontal, 24)
+      .padding(.bottom, 22)
+  }
+
+  private func handleBegin() {
+    if routine.requiresAcknowledgement {
+      showingSafetyGate = true
+    } else {
+      onBegin()
+    }
+  }
+
+  private var safetyGateView: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      Text("Before you begin")
+        .font(BreatheFont.display(30, weight: .light, italic: true))
+        .foregroundStyle(scheme.ink)
+        .padding(.top, 40)
+        .padding(.bottom, 22)
+
+      ScrollView {
+        VStack(alignment: .leading, spacing: 18) {
+          Text(BreatheSafety.intenseRules)
+            .font(BreatheFont.utility(13, weight: .regular))
+            .foregroundStyle(scheme.ink)
+            .lineSpacing(4)
+            .fixedSize(horizontal: false, vertical: true)
+
+          if let note = routine.safetyNote {
+            Text(note)
+              .font(BreatheFont.utility(13, weight: .light))
+              .foregroundStyle(scheme.muted)
+              .lineSpacing(4)
+              .fixedSize(horizontal: false, vertical: true)
+          }
+
+          VStack(alignment: .leading, spacing: 7) {
+            Text("Avoid or seek advice with")
+              .font(BreatheFont.utility(10, weight: .medium))
+              .foregroundStyle(scheme.muted)
+              .tracking(2.4)
+              .textCase(.uppercase)
+            ForEach(BreatheSafety.contraindications, id: \.self) { item in
+              Text("— \(item)")
+                .font(BreatheFont.utility(13, weight: .light))
+                .foregroundStyle(scheme.ink)
+            }
+          }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+      }
+      .scrollIndicators(.hidden)
+
+      VStack(spacing: 14) {
+        Button {
+          showingSafetyGate = false
+          onBegin()
+        } label: {
+          Text("I understand — begin")
+            .font(BreatheFont.display(18, weight: .regular, italic: true))
+            .foregroundStyle(scheme.paper)
+            .frame(maxWidth: .infinity)
+            .frame(height: 60)
+            .background(Capsule().fill(scheme.ink))
+        }
+        .buttonStyle(.plain)
+
+        Button {
+          showingSafetyGate = false
+        } label: {
+          Text("Not now")
+            .font(BreatheFont.utility(11, weight: .medium))
+            .foregroundStyle(scheme.muted)
+            .tracking(3)
+            .textCase(.uppercase)
+            .frame(height: 30)
+        }
+        .buttonStyle(.plain)
+      }
+      .padding(.top, 18)
+    }
+    .padding(.horizontal, 28)
+    .padding(.bottom, 30)
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(scheme.paper)
+  }
+}
