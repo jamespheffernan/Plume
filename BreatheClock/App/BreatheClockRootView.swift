@@ -7,9 +7,12 @@ struct BreatheClockRootView: View {
   @AppStorage("lastRoutine") private var lastRoutineID = Routine.coherence.id
   @AppStorage("durationSeconds") private var durationSeconds = 180
   @AppStorage("didAcknowledgeSafety") private var didAcknowledgeSafety = false
+  @AppStorage("startOnGoals") private var startOnGoals = true
 
-  @State private var route: AppRoute = .library
+  @State private var route: AppRoute = .goal
   @State private var selectedRoutine = Routine.coherence
+  @State private var sessionRoutine = Routine.coherence
+  @State private var focusedCategory: String?
   @State private var showSafety = false
 
   var body: some View {
@@ -17,15 +20,33 @@ struct BreatheClockRootView: View {
       activeScheme.paper.ignoresSafeArea()
 
       switch route {
+      case .goal:
+        GoalEntryView(
+          scheme: activeScheme,
+          onChooseCategory: { category in
+            focusedCategory = category
+            navigate(to: .library)
+          },
+          onBrowseAll: {
+            focusedCategory = nil
+            navigate(to: .library)
+          },
+          onSettings: { navigate(to: .settings) }
+        )
+        .transition(.opacity)
+
       case .library:
         LibraryView(
           scheme: activeScheme,
           selectedRoutine: selectedRoutine,
+          focusedCategory: focusedCategory,
           onSelectRoutine: { routine in
             selectedRoutine = routine
             lastRoutineID = routine.id
             navigate(to: .setup)
           },
+          onShowAll: { withAnimation(.easeInOut(duration: 0.25)) { focusedCategory = nil } },
+          onGoals: { navigate(to: .goal) },
           onSettings: { navigate(to: .settings) }
         )
         .transition(.opacity)
@@ -36,18 +57,29 @@ struct BreatheClockRootView: View {
           routine: selectedRoutine,
           selectedDuration: durationBinding,
           onBack: { navigate(to: .library) },
-          onBegin: { navigate(to: .session) }
+          onBegin: { resolved in
+            sessionRoutine = resolved
+            navigate(to: resolved.mode == .assessment ? .assessment : .session)
+          }
         )
         .transition(.opacity)
 
       case .session:
         SessionView(
           scheme: activeScheme,
-          routine: selectedRoutine,
+          routine: sessionRoutine,
           duration: durationBinding.wrappedValue,
           audioCue: activeAudioCue,
           hapticsEnabled: hapticsEnabled,
           onEnd: { navigate(to: .setup) }
+        )
+        .transition(.opacity)
+
+      case .assessment:
+        AssessmentView(
+          scheme: activeScheme,
+          routine: sessionRoutine,
+          onBack: { navigate(to: .setup) }
         )
         .transition(.opacity)
 
@@ -57,7 +89,8 @@ struct BreatheClockRootView: View {
           schemeSelection: schemeBinding,
           audioCue: audioBinding,
           hapticsEnabled: $hapticsEnabled,
-          onBack: { navigate(to: .library) }
+          startOnGoals: $startOnGoals,
+          onBack: { navigate(to: startOnGoals ? .goal : .library) }
         )
         .transition(.opacity)
       }
@@ -71,6 +104,8 @@ struct BreatheClockRootView: View {
     }
     .task {
       selectedRoutine = Routine.byID(lastRoutineID) ?? .coherence
+      sessionRoutine = selectedRoutine
+      route = startOnGoals ? .goal : .library
       showSafety = !didAcknowledgeSafety
     }
   }
@@ -112,9 +147,11 @@ struct BreatheClockRootView: View {
 }
 
 private enum AppRoute {
+  case goal
   case library
   case setup
   case session
+  case assessment
   case settings
 }
 

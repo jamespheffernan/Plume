@@ -101,13 +101,26 @@ Accurate keepers: Coherence, Calm, Physiological Sigh, Sleep, Box/Box 5.
 - ✅ **Accuracy fixes** (B1/B2/B3): Wim Hof now runs real rounds (30 brisk breaths → 45s exhale hold → recovery inhale + 15s hold, repeated; flagged intense); Alternate Nostril shows L/R side per phase (simplified to authentic no-hold Nadi Shodhana); Bhramari cues "Hum" on a lengthened humming exhale.
 - ✅ Full simulator build passes (`xcodebuild … BUILD SUCCEEDED`).
 - ✅ Visually verified on iPhone 17 simulator: onboarding, goal-first library, per-routine caution (Sleep/Energy), intensity gate (Wim Hof), Wim Hof rounds + in-session caution, Bhramari "HUM" cue, Alternate Nostril "INHALE · LEFT" cue, Settings safety section.
+- ✅ **D — Reduced ratios:** added `reducedPhases` + a `BreathPace` (Eased/Full) selector on Setup that resolves the routine before launch. Eased variants for Sleep (4-7-8 → 4-4-6), Box (4-4-4-4 → 3-3-3-3), Kumbhaka (2-4-2 → 2-4-1), Light Breathing (2-3-3 → 2-3-1). *Box 5 intentionally has no eased variant — Box is its gentler sibling.*
+- ✅ **F — Sensory matching:** `outcomeFamily` → `CueStyle` (soft / coherent / crisp / silent) drives per-family audio volume + haptic intensity in-session. F2 grounding intro + aftercare for somatic release (Rebirthing). F3 continuous gliding tone for Coherence (`makeGlideBuffer`).
+- ✅ **G1 — Assessment:** BOLT / Control Pause routine (`mode: .assessment`) with a dedicated `AssessmentView` — instructions, tap-to-start/stop stopwatch (first urge, not max), soft non-medical interpretation bands, persisted last score (shown in Settings + the BOLT intro).
+- ✅ **G2 — Program engine + Samadhi:** `ProgramStage` + `Routine.program`; `state(at:)` refactored into a `cyclicState` helper that walks stages; `BreathState` gains `stageIndex`/`stageTitle`. Samadhi revived as a guided 4-stage descent (Settle → Coherence → Lengthen → Stillness, 8:30). Session shows the stage title; Setup shows the stage outline and hides the duration picker.
+- ✅ **E2 — Goal-first entry:** `GoalEntryView` landing screen (6 goal cards → categories) with Browse-all; `LibraryView` gains a `focusedCategory` filter with Goals/Show-all affordances; a Settings "Open on goals" toggle (`startOnGoals`, default on) keeps it optional.
+- ✅ Full simulator build passes after all of the above; every new screen visually verified on iPhone 17 (goal screen, filtered libraries, pace selector, Samadhi program setup + staged session, BOLT setup/holding/result, intensity gate + grounding intro).
 
 ### Known simplifications (candidates for follow-up)
 - **Wim Hof retention is a fixed 45s**, not open-ended "hold as long as comfortable" — the session engine has no tap-to-advance. A dedicated rounds UI with an open-ended hold would be more faithful.
 - **Wim Hof duration picker maps to round count** via cycle alignment (e.g. "3 min" → 2 rounds ≈ 5 min); the Setup "Completes at …" line discloses it, but a rounds-based picker would read better.
 
-## Remaining (not yet started)
-- ⬜ **D** — reduced-ratio / beginner scaling for hold-heavy routines.
-- ⬜ **F** — sensory cues matched to outcome family; grounding intro/outro for Rebirthing; optional continuous glide tone for Coherence.
-- ⬜ **G** — respiratory assessment (BOLT / Control Pause), progression scaffolding (could revive Samadhi as a guided practice).
-- ⬜ **E2** — optional goal-based entry screen.
+- **Samadhi stages are fixed-length** (90 / 180 / 150 / 90s). A future version could let the practitioner extend or repeat a stage.
+- **BOLT is a manual stopwatch** — the practitioner taps at the first urge. There's no auto-detection (nor should there be), and the score is whole seconds.
+- **Pace resets to Full** each time Setup opens; it is not persisted per routine.
+- **Goal cards focus a category** in the library rather than deep-linking to a single recommended routine — keeps alternatives one tap away.
+
+## Remaining (all complete)
+- ✅ **D** — reduced-ratio / beginner scaling for hold-heavy routines.
+- ✅ **F** — sensory cues matched to outcome family; grounding intro/outro for Rebirthing; continuous glide tone for Coherence.
+- ✅ **G** — respiratory assessment (BOLT / Control Pause); progression scaffolding via Samadhi revived as a guided multi-stage practice.
+- ✅ **E2** — optional goal-based entry screen.
+
+The full content-revision plan is now implemented end to end.

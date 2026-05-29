@@ -6,7 +6,10 @@ struct SettingsView: View {
   @Binding var schemeSelection: BreatheScheme
   @Binding var audioCue: AudioCue
   @Binding var hapticsEnabled: Bool
+  @Binding var startOnGoals: Bool
   let onBack: () -> Void
+
+  @AppStorage("lastBoltScore") private var lastBoltScore = 0
 
   var body: some View {
     ScrollView {
@@ -76,6 +79,26 @@ struct SettingsView: View {
           .padding(.vertical, 5)
         }
 
+        settingsSection(title: "Start screen", topPadding: 34) {
+          HStack(alignment: .center, spacing: 18) {
+            VStack(alignment: .leading, spacing: 4) {
+              Text("Open on goals")
+                .font(BreatheFont.display(17, weight: .regular))
+                .foregroundStyle(scheme.ink)
+              Text("Choose a goal before browsing practices")
+                .font(BreatheFont.utility(12, weight: .light))
+                .foregroundStyle(scheme.muted)
+            }
+
+            Spacer()
+
+            Toggle("", isOn: $startOnGoals)
+              .labelsHidden()
+              .tint(scheme.ink)
+          }
+          .padding(.vertical, 5)
+        }
+
         settingsSection(title: "Safety", topPadding: 34) {
           VStack(alignment: .leading, spacing: 14) {
             Text(BreatheSafety.disclaimer)
@@ -96,6 +119,12 @@ struct SettingsView: View {
                   .foregroundStyle(scheme.ink)
               }
             }
+          }
+        }
+
+        if lastBoltScore > 0 {
+          settingsSection(title: "Breath", topPadding: 34) {
+            aboutRow("Last BOLT score", value: "\(lastBoltScore)s")
           }
         }
 
@@ -120,7 +149,7 @@ struct SettingsView: View {
         HStack(spacing: 8) {
           Image(systemName: "chevron.left")
             .font(.system(size: 12, weight: .semibold))
-          Text("Library")
+          Text("Back")
             .font(BreatheFont.utility(12, weight: .regular))
             .tracking(2.1)
         }

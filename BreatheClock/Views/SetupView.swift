@@ -5,9 +5,15 @@ struct SetupView: View {
   let routine: Routine
   @Binding var selectedDuration: SessionDuration
   let onBack: () -> Void
-  let onBegin: () -> Void
+  let onBegin: (Routine) -> Void
 
   @State private var showingSafetyGate = false
+  @State private var pace: BreathPace = .full
+
+  /// The routine actually launched — eased pattern swapped in when chosen.
+  private var resolvedRoutine: Routine {
+    routine.resolved(for: pace)
+  }
 
   var body: some View {
     VStack(spacing: 0) {
@@ -15,7 +21,7 @@ struct SetupView: View {
         .padding(.horizontal, 24)
         .padding(.top, 24)
 
-      Spacer(minLength: 34)
+      Spacer(minLength: 30)
 
       VStack(spacing: 0) {
         Text(routine.name)
@@ -32,39 +38,20 @@ struct SetupView: View {
           .multilineTextAlignment(.center)
           .lineSpacing(4)
           .frame(maxWidth: 286)
-          .padding(.bottom, 38)
+          .padding(.bottom, 34)
 
-        if routine.isTimed {
-          patternBlock
-        } else {
-          untimedBlock
-        }
+        content
       }
       .padding(.horizontal, 28)
 
-      Spacer(minLength: 28)
+      Spacer(minLength: 24)
 
-      if routine.isTimed {
-        durationPicker
-          .padding(.horizontal, 24)
-          .padding(.bottom, 26)
-
-        if let note = routine.safetyNote, !routine.requiresAcknowledgement {
-          safetyNoteBlock(note)
-        }
-
-        beginButton
-          .padding(.horizontal, 24)
-          .padding(.bottom, 30)
-      } else {
-        descriptionOnlyFooter
-          .padding(.horizontal, 24)
-          .padding(.bottom, 30)
-      }
+      footer
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(scheme.paper)
     .animation(.easeInOut(duration: 0.4), value: scheme.id)
+    .animation(.easeInOut(duration: 0.25), value: pace)
     .sheet(isPresented: $showingSafetyGate) {
       safetyGateView
     }
@@ -91,9 +78,24 @@ struct SetupView: View {
     }
   }
 
+  // MARK: - Content (the routine's shape)
+
+  @ViewBuilder
+  private var content: some View {
+    if routine.mode == .assessment {
+      assessmentBlock
+    } else if routine.isProgram {
+      programBlock
+    } else if routine.isTimed {
+      patternBlock
+    } else {
+      untimedBlock
+    }
+  }
+
   @ViewBuilder
   private var patternBlock: some View {
-    if routine.phases.count > 6 {
+    if resolvedRoutine.phases.count > 6 {
       compactPatternBlock
     } else {
       detailedPatternBlock
@@ -103,7 +105,7 @@ struct SetupView: View {
   private var detailedPatternBlock: some View {
     VStack(spacing: 11) {
       HStack(alignment: .firstTextBaseline, spacing: 18) {
-        ForEach(Array(routine.phases.enumerated()), id: \.offset) { index, phase in
+        ForEach(Array(resolvedRoutine.phases.enumerated()), id: \.offset) { index, phase in
           if index > 0 {
             Text("·")
               .font(BreatheFont.display(28, weight: .light))
@@ -120,7 +122,7 @@ struct SetupView: View {
       .lineLimit(1)
 
       HStack(spacing: 22) {
-        ForEach(Array(routine.phases.enumerated()), id: \.offset) { _, phase in
+        ForEach(Array(resolvedRoutine.phases.enumerated()), id: \.offset) { _, phase in
           Text(phase.label)
             .font(BreatheFont.utility(10, weight: .light))
             .foregroundStyle(scheme.muted)
@@ -136,7 +138,7 @@ struct SetupView: View {
 
   private var compactPatternBlock: some View {
     VStack(spacing: 12) {
-      Text(routine.patternText)
+      Text(resolvedRoutine.patternText)
         .font(BreatheFont.display(34, weight: .light))
         .foregroundStyle(scheme.ink)
         .monospacedDigit()
@@ -152,6 +154,60 @@ struct SetupView: View {
     }
   }
 
+  private var programBlock: some View {
+    VStack(spacing: 0) {
+      ForEach(Array((routine.program ?? []).enumerated()), id: \.offset) { _, stage in
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+          Text(stage.title)
+            .font(BreatheFont.display(18, weight: .regular, italic: true))
+            .foregroundStyle(scheme.ink)
+
+          Spacer(minLength: 10)
+
+          Text(stagePattern(stage))
+            .font(BreatheFont.display(14, weight: .light))
+            .foregroundStyle(scheme.muted)
+            .monospacedDigit()
+
+          Text(stage.duration.clockText)
+            .font(BreatheFont.utility(11, weight: .regular))
+            .foregroundStyle(scheme.muted)
+            .monospacedDigit()
+            .frame(width: 42, alignment: .trailing)
+        }
+        .padding(.vertical, 13)
+        .overlay(alignment: .bottom) {
+          Rectangle()
+            .fill(scheme.hairline)
+            .frame(height: 1)
+        }
+      }
+    }
+  }
+
+  private var assessmentBlock: some View {
+    VStack(alignment: .leading, spacing: 16) {
+      assessmentStep("1", "Breathe normally, then exhale gently.")
+      assessmentStep("2", "Hold, and start the timer.")
+      assessmentStep("3", "Stop at the first clear urge to breathe.")
+    }
+    .frame(maxWidth: 300)
+  }
+
+  private func assessmentStep(_ number: String, _ text: String) -> some View {
+    HStack(alignment: .top, spacing: 14) {
+      Text(number)
+        .font(BreatheFont.display(20, weight: .light, italic: true))
+        .foregroundStyle(scheme.accent)
+        .frame(width: 20, alignment: .leading)
+      Text(text)
+        .font(BreatheFont.utility(14, weight: .regular))
+        .foregroundStyle(scheme.ink)
+        .lineSpacing(4)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+  }
+
   private var untimedBlock: some View {
     VStack(spacing: 10) {
       Text("Untimed")
@@ -163,6 +219,114 @@ struct SetupView: View {
         .foregroundStyle(scheme.muted)
         .tracking(2.7)
         .textCase(.uppercase)
+    }
+  }
+
+  private func stagePattern(_ stage: ProgramStage) -> String {
+    stage.phases.map { $0.displaySeconds }.joined(separator: " · ")
+  }
+
+  // MARK: - Footer (controls)
+
+  @ViewBuilder
+  private var footer: some View {
+    if routine.mode == .assessment {
+      assessmentFooter
+    } else if routine.isProgram {
+      programFooter
+    } else if routine.isTimed {
+      timedFooter
+    } else {
+      descriptionOnlyFooter
+        .padding(.horizontal, 24)
+        .padding(.bottom, 30)
+    }
+  }
+
+  private var timedFooter: some View {
+    VStack(spacing: 0) {
+      if routine.hasReducedVariant {
+        paceSelector
+          .padding(.horizontal, 24)
+          .padding(.bottom, 22)
+      }
+
+      durationPicker
+        .padding(.horizontal, 24)
+        .padding(.bottom, 24)
+
+      if let note = routine.safetyNote, !routine.requiresAcknowledgement {
+        safetyNoteBlock(note)
+      }
+
+      beginButton("Begin")
+        .padding(.horizontal, 24)
+        .padding(.bottom, 30)
+    }
+  }
+
+  private var programFooter: some View {
+    VStack(spacing: 0) {
+      Text("Completes at \(routine.programTotalDuration.clockText)")
+        .font(BreatheFont.utility(10, weight: .light))
+        .foregroundStyle(scheme.muted)
+        .tracking(1.5)
+        .textCase(.uppercase)
+        .padding(.bottom, 20)
+
+      beginButton("Begin")
+        .padding(.horizontal, 24)
+        .padding(.bottom, 30)
+    }
+  }
+
+  private var assessmentFooter: some View {
+    VStack(spacing: 0) {
+      if let note = routine.safetyNote {
+        safetyNoteBlock(note)
+      }
+
+      beginButton("Begin measurement")
+        .padding(.horizontal, 24)
+        .padding(.bottom, 30)
+    }
+  }
+
+  private var paceSelector: some View {
+    VStack(spacing: 12) {
+      Text("Pace")
+        .font(BreatheFont.utility(10, weight: .regular))
+        .foregroundStyle(scheme.muted)
+        .tracking(3.1)
+        .textCase(.uppercase)
+
+      HStack(spacing: 5) {
+        ForEach(BreathPace.allCases) { option in
+          Button {
+            pace = option
+          } label: {
+            Text(option.label)
+              .font(BreatheFont.display(18, weight: pace == option ? .regular : .light))
+              .foregroundStyle(pace == option ? scheme.ink : scheme.muted)
+              .frame(maxWidth: .infinity)
+              .padding(.vertical, 8)
+              .overlay(alignment: .bottom) {
+                Rectangle()
+                  .fill(pace == option ? scheme.ink : Color.clear)
+                  .frame(height: 1)
+              }
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel("\(option.label) pace")
+        }
+      }
+
+      Text(pace == .eased ? "Shorter holds while you build tolerance" : "The full pattern")
+        .font(BreatheFont.utility(10, weight: .light))
+        .foregroundStyle(scheme.muted)
+        .tracking(1.5)
+        .textCase(.uppercase)
+        .padding(.top, 2)
     }
   }
 
@@ -203,14 +367,14 @@ struct SetupView: View {
         }
       }
 
-      if let alignmentText = routine.alignmentText(for: selectedDuration) {
+      if let alignmentText = resolvedRoutine.alignmentText(for: selectedDuration) {
         Text(alignmentText)
           .font(BreatheFont.utility(10, weight: .light))
           .foregroundStyle(scheme.muted)
           .tracking(1.5)
           .textCase(.uppercase)
           .padding(.top, 2)
-      } else if routine.hasHoldPhases {
+      } else if resolvedRoutine.hasHoldPhases {
         Text("Audio plays for hold phases too")
           .font(BreatheFont.utility(10, weight: .light))
           .foregroundStyle(scheme.muted)
@@ -221,10 +385,10 @@ struct SetupView: View {
     }
   }
 
-  private var beginButton: some View {
+  private func beginButton(_ title: String) -> some View {
     Button(action: handleBegin) {
       HStack(spacing: 12) {
-        Text("Begin")
+        Text(title)
           .font(BreatheFont.display(19, weight: .regular, italic: true))
         Image(systemName: "chevron.right")
           .font(.system(size: 13, weight: .semibold))
@@ -235,7 +399,7 @@ struct SetupView: View {
       .background(Capsule().fill(scheme.ink))
     }
     .buttonStyle(.plain)
-    .accessibilityLabel("Begin \(routine.name)")
+    .accessibilityLabel("\(title), \(routine.name)")
   }
 
   private var descriptionOnlyFooter: some View {
@@ -268,7 +432,7 @@ struct SetupView: View {
     if routine.requiresAcknowledgement {
       showingSafetyGate = true
     } else {
-      onBegin()
+      onBegin(resolvedRoutine)
     }
   }
 
@@ -316,7 +480,7 @@ struct SetupView: View {
       VStack(spacing: 14) {
         Button {
           showingSafetyGate = false
-          onBegin()
+          onBegin(resolvedRoutine)
         } label: {
           Text("I understand — begin")
             .font(BreatheFont.display(18, weight: .regular, italic: true))

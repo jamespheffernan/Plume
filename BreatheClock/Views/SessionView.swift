@@ -17,11 +17,33 @@ struct SessionView: View {
   @State private var lastIntroDigit: Int?
   @State private var lastBoundaryKey: String?
   @State private var isComplete = false
+  @State private var showGroundingIntro = false
 
   private let tick = Timer.publish(every: 0.08, on: .main, in: .common).autoconnect()
   private let introDuration: TimeInterval = 3
 
+  private var cueStyle: CueStyle {
+    routine.outcomeFamily.cueStyle
+  }
+
+  private var needsGrounding: Bool {
+    routine.outcomeFamily.needsGrounding
+  }
+
   var body: some View {
+    Group {
+      if showGroundingIntro {
+        groundingIntroView
+      } else {
+        sessionTimeline
+      }
+    }
+    .onAppear(perform: handleAppear)
+    .onReceive(tick, perform: handleTick)
+    .animation(.easeInOut(duration: 0.4), value: scheme.id)
+  }
+
+  private var sessionTimeline: some View {
     TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
       let elapsed = effectiveElapsed(at: context.date)
       let sessionLimit = sessionDurationLimit
@@ -38,6 +60,11 @@ struct SessionView: View {
           progressBar(elapsed: cappedElapsed)
             .padding(.horizontal, 28)
             .padding(.top, 14)
+
+          if introRemaining <= 0, let stageTitle = state.stageTitle {
+            stageHeader(stageTitle)
+              .padding(.top, 18)
+          }
 
           Spacer(minLength: 32)
 
@@ -72,9 +99,6 @@ struct SessionView: View {
       }
       .background(scheme.paper)
     }
-    .onAppear(perform: restart)
-    .onReceive(tick, perform: handleTick)
-    .animation(.easeInOut(duration: 0.4), value: scheme.id)
   }
 
   private var isPaused: Bool {
@@ -198,6 +222,76 @@ struct SessionView: View {
     .padding(.horizontal, 24)
   }
 
+  private func stageHeader(_ title: String) -> some View {
+    VStack(spacing: 5) {
+      Text("Stage")
+        .font(BreatheFont.utility(9, weight: .light))
+        .foregroundStyle(scheme.muted)
+        .tracking(3)
+        .textCase(.uppercase)
+      Text(title)
+        .font(BreatheFont.display(21, weight: .regular, italic: true))
+        .foregroundStyle(scheme.ink)
+        .id(title)
+        .transition(.opacity.animation(.easeInOut(duration: 0.4)))
+    }
+    .frame(maxWidth: .infinity)
+  }
+
+  private var groundingIntroView: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      Spacer(minLength: 56)
+
+      Text("Before you begin")
+        .font(BreatheFont.utility(11, weight: .medium))
+        .foregroundStyle(scheme.muted)
+        .tracking(3)
+        .textCase(.uppercase)
+        .padding(.bottom, 18)
+
+      Text("Lie down somewhere you feel safe.")
+        .font(BreatheFont.display(30, weight: .light, italic: true))
+        .foregroundStyle(scheme.ink)
+        .lineSpacing(3)
+        .padding(.bottom, 20)
+
+      Text("Connected breathing can surface strong emotion and physical sensation. Let your body be fully supported. There is nothing to push for — you can slow the pace or stop at any time.")
+        .font(BreatheFont.utility(14, weight: .regular))
+        .foregroundStyle(scheme.ink)
+        .lineSpacing(5)
+        .fixedSize(horizontal: false, vertical: true)
+
+      Spacer()
+
+      Button(action: beginAfterGrounding) {
+        Text("I'm settled — begin")
+          .font(BreatheFont.display(18, weight: .regular, italic: true))
+          .foregroundStyle(scheme.paper)
+          .frame(maxWidth: .infinity)
+          .frame(height: 62)
+          .background(Capsule().fill(scheme.ink))
+      }
+      .buttonStyle(.plain)
+      .padding(.bottom, 16)
+
+      Button(action: onEnd) {
+        Text("Back")
+          .font(BreatheFont.utility(11, weight: .medium))
+          .foregroundStyle(scheme.muted)
+          .tracking(3)
+          .textCase(.uppercase)
+          .frame(height: 30)
+          .frame(maxWidth: .infinity)
+      }
+      .buttonStyle(.plain)
+
+      Spacer(minLength: 24)
+    }
+    .padding(.horizontal, 30)
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(scheme.paper)
+  }
+
   private var controls: some View {
     HStack(spacing: 30) {
       textControl("Restart", action: restart)
@@ -247,6 +341,17 @@ struct SessionView: View {
           .foregroundStyle(scheme.muted)
           .tracking(3)
           .textCase(.uppercase)
+
+        if needsGrounding {
+          Text("Stay where you are for a moment. Let your breath find its own rhythm before you get up.")
+            .font(BreatheFont.utility(13, weight: .light))
+            .foregroundStyle(scheme.muted)
+            .multilineTextAlignment(.center)
+            .lineSpacing(4)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: 300)
+            .padding(.top, 10)
+        }
       }
 
       Spacer()
@@ -287,7 +392,7 @@ struct SessionView: View {
   }
 
   private func handleTick(_ date: Date) {
-    guard !isPaused, !isComplete else { return }
+    guard !isPaused, !isComplete, !showGroundingIntro else { return }
 
     let introRemaining = introCountdownRemaining(at: date)
     if introRemaining > 0 {
@@ -313,11 +418,22 @@ struct SessionView: View {
   }
 
   private func triggerBoundaryCue(for phase: BreathPhase) {
-    if hapticsEnabled {
-      let generator = UIImpactFeedbackGenerator(style: .light)
-      generator.impactOccurred()
+    if hapticsEnabled, let haptic = hapticStyle(for: cueStyle) {
+      let generator = UIImpactFeedbackGenerator(style: haptic.style)
+      generator.impactOccurred(intensity: haptic.intensity)
     }
-    AudioCuePlayer.shared.play(audioCue, for: phase.kind, phaseDuration: phase.seconds)
+    AudioCuePlayer.shared.play(audioCue, for: phase.kind, phaseDuration: phase.seconds, style: cueStyle)
+  }
+
+  private func hapticStyle(
+    for cue: CueStyle
+  ) -> (style: UIImpactFeedbackGenerator.FeedbackStyle, intensity: CGFloat)? {
+    switch cue {
+    case .soft: return (.soft, 0.5)
+    case .coherent: return (.soft, 0.4)
+    case .crisp: return (.rigid, 0.9)
+    case .silent: return nil
+    }
   }
 
   private func triggerIntroCue() {
@@ -335,6 +451,11 @@ struct SessionView: View {
     AudioCuePlayer.shared.playCompletion(audioCue)
   }
 
+  private func handleAppear() {
+    restart()
+    showGroundingIntro = needsGrounding
+  }
+
   private func restart() {
     startDate = Date().addingTimeInterval(introDuration)
     pauseStarted = nil
@@ -342,6 +463,11 @@ struct SessionView: View {
     lastIntroDigit = nil
     lastBoundaryKey = nil
     isComplete = false
+  }
+
+  private func beginAfterGrounding() {
+    showGroundingIntro = false
+    restart()
   }
 
   private func togglePause() {

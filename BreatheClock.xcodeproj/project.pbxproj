@@ -11,7 +11,9 @@
 		1B73849B265AEBCF752B51E8 /* Manrope-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B2CA4F4A6D88DA482553B38E /* Manrope-Variable.ttf */; };
 		292A3AA0075007B5D1CE7C64 /* SessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B850B4D657D5B4F0EBA1FC6D /* SessionView.swift */; };
 		32E408B820263FF6D6432775 /* AudioCuePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 599AC1DBD2684D5AE704A4B2 /* AudioCuePlayer.swift */; };
+		4DFC4AE306C2E59144C84586 /* AssessmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2500373E282F841EB2D6FD /* AssessmentView.swift */; };
 		503D81763F03BC89BBEBBCC1 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE93A22BBEDFA9AE005E8E0C /* LibraryView.swift */; };
+		6787AA49FF4743DA1B4D2999 /* GoalEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4C307238D0A42279A13B860 /* GoalEntryView.swift */; };
 		AA02545D9FEE5A5E38706C1A /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF49433358E9D83E66B070AA /* Theme.swift */; };
 		ABD3F17804DE3632A489902A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61D3C46491DEB9065E0F9900 /* SettingsView.swift */; };
 		B09038832E22D48E2A79C4CA /* BreathingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A441A3EA9DB995677A2F39D /* BreathingModels.swift */; };
@@ -28,19 +30,23 @@
 		61D3C46491DEB9065E0F9900 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		9839F2161868D0FDE29F13E4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9AB37F983CB245C70E5CC10C /* BreatheClockApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreatheClockApp.swift; sourceTree = "<group>"; };
-		9F8BBD911E43011201EB9FF8 /* Breathe Clock.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Breathe Clock.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		9F8BBD911E43011201EB9FF8 /* BreatheClock.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BreatheClock.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A9984281014C849260347145 /* BreatheClockRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreatheClockRootView.swift; sourceTree = "<group>"; };
+		AA2500373E282F841EB2D6FD /* AssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssessmentView.swift; sourceTree = "<group>"; };
 		B2CA4F4A6D88DA482553B38E /* Manrope-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-Variable.ttf"; sourceTree = "<group>"; };
 		B850B4D657D5B4F0EBA1FC6D /* SessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionView.swift; sourceTree = "<group>"; };
 		CAE95B9C522D24470777785B /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
 		CF49433358E9D83E66B070AA /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		DE93A22BBEDFA9AE005E8E0C /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		F4C307238D0A42279A13B860 /* GoalEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalEntryView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		08CC852300FE001CDCFFF185 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				AA2500373E282F841EB2D6FD /* AssessmentView.swift */,
+				F4C307238D0A42279A13B860 /* GoalEntryView.swift */,
 				DE93A22BBEDFA9AE005E8E0C /* LibraryView.swift */,
 				B850B4D657D5B4F0EBA1FC6D /* SessionView.swift */,
 				61D3C46491DEB9065E0F9900 /* SettingsView.swift */,
@@ -60,7 +66,7 @@
 		557EFB04B6D0DBD908FBE840 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				9F8BBD911E43011201EB9FF8 /* Breathe Clock.app */,
+				9F8BBD911E43011201EB9FF8 /* BreatheClock.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -139,7 +145,7 @@
 			packageProductDependencies = (
 			);
 			productName = BreatheClock;
-			productReference = 9F8BBD911E43011201EB9FF8 /* Breathe Clock.app */;
+			productReference = 9F8BBD911E43011201EB9FF8 /* BreatheClock.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -152,6 +158,7 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					E5CD45C0AFE5063F8B7624E9 = {
+						DevelopmentTeam = 3MVGA7QVHM;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -193,10 +200,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4DFC4AE306C2E59144C84586 /* AssessmentView.swift in Sources */,
 				32E408B820263FF6D6432775 /* AudioCuePlayer.swift in Sources */,
 				BF0FDF8969F50D867A16F679 /* BreatheClockApp.swift in Sources */,
 				10E3430CD730E5B5AC1E3A8E /* BreatheClockRootView.swift in Sources */,
 				B09038832E22D48E2A79C4CA /* BreathingModels.swift in Sources */,
+				6787AA49FF4743DA1B4D2999 /* GoalEntryView.swift in Sources */,
 				503D81763F03BC89BBEBBCC1 /* LibraryView.swift in Sources */,
 				292A3AA0075007B5D1CE7C64 /* SessionView.swift in Sources */,
 				ABD3F17804DE3632A489902A /* SettingsView.swift in Sources */,
@@ -215,7 +224,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = SA42CTY6NM;
 				INFOPLIST_FILE = BreatheClock/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -365,7 +373,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = SA42CTY6NM;
 				INFOPLIST_FILE = BreatheClock/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (

@@ -3,16 +3,30 @@ import SwiftUI
 struct LibraryView: View {
   let scheme: BreatheScheme
   let selectedRoutine: Routine
+  let focusedCategory: String?
   let onSelectRoutine: (Routine) -> Void
+  let onShowAll: () -> Void
+  let onGoals: () -> Void
   let onSettings: () -> Void
+
+  private var groups: [(category: String, routines: [Routine])] {
+    guard let focusedCategory else { return Routine.grouped }
+    return Routine.grouped.filter { $0.category == focusedCategory }
+  }
 
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 0) {
         header
           .padding(.horizontal, 28)
-          .padding(.top, 28)
-          .padding(.bottom, 26)
+          .padding(.top, 24)
+          .padding(.bottom, 20)
+
+        if focusedCategory != nil {
+          filterBar
+            .padding(.horizontal, 28)
+            .padding(.bottom, 18)
+        }
 
         Rectangle()
           .fill(scheme.hairline)
@@ -21,7 +35,7 @@ struct LibraryView: View {
           .padding(.bottom, 22)
 
         VStack(alignment: .leading, spacing: 28) {
-          ForEach(Routine.grouped, id: \.category) { group in
+          ForEach(groups, id: \.category) { group in
             categorySection(group)
           }
         }
@@ -32,30 +46,70 @@ struct LibraryView: View {
     .background(scheme.paper)
     .scrollIndicators(.hidden)
     .animation(.easeInOut(duration: 0.4), value: scheme.id)
+    .animation(.easeInOut(duration: 0.3), value: focusedCategory)
   }
 
   private var header: some View {
-    HStack(alignment: .center) {
-      Text("Breathe")
-        .font(BreatheFont.display(28, weight: .regular, italic: true))
+    VStack(alignment: .leading, spacing: 18) {
+      HStack {
+        Button(action: onGoals) {
+          HStack(spacing: 8) {
+            Image(systemName: "chevron.left")
+              .font(.system(size: 12, weight: .semibold))
+            Text("Goals")
+              .font(BreatheFont.utility(12, weight: .regular))
+              .tracking(2.1)
+          }
+          .textCase(.uppercase)
+          .foregroundStyle(scheme.muted)
+          .frame(height: 44)
+          .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+
+        Spacer()
+
+        Button(action: onSettings) {
+          HStack(spacing: 4) {
+            ForEach(0..<3, id: \.self) { _ in
+              Circle()
+                .fill(scheme.ink)
+                .frame(width: 4, height: 4)
+            }
+          }
+          .frame(width: 44, height: 44)
+          .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Settings")
+      }
+
+      Text(focusedCategory ?? "All practices")
+        .font(BreatheFont.display(30, weight: .light, italic: true))
         .foregroundStyle(scheme.ink)
-        .tracking(-0.2)
+        .tracking(-0.5)
+    }
+  }
+
+  private var filterBar: some View {
+    HStack {
+      Text("Filtered by goal")
+        .font(BreatheFont.utility(11, weight: .light))
+        .foregroundStyle(scheme.muted)
+        .tracking(2.2)
+        .textCase(.uppercase)
 
       Spacer()
 
-      Button(action: onSettings) {
-        HStack(spacing: 4) {
-          ForEach(0..<3, id: \.self) { _ in
-            Circle()
-              .fill(scheme.ink)
-              .frame(width: 4, height: 4)
-          }
-        }
-        .frame(width: 44, height: 44)
-        .contentShape(Rectangle())
+      Button(action: onShowAll) {
+        Text("Show all")
+          .font(BreatheFont.utility(11, weight: .medium))
+          .foregroundStyle(scheme.ink)
+          .tracking(2.2)
+          .textCase(.uppercase)
+          .contentShape(Rectangle())
       }
       .buttonStyle(.plain)
-      .accessibilityLabel("Settings")
     }
   }
 

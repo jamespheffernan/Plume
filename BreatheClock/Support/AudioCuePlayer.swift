@@ -17,9 +17,17 @@ final class AudioCuePlayer {
     engine.mainMixerNode.outputVolume = 0.42
   }
 
-  func play(_ cue: AudioCue, for phase: BreathPhase.Kind, phaseDuration: TimeInterval? = nil) {
-    guard cue != .off else { return }
-    guard let buffer = makeBuffer(for: cue, phase: phase, phaseDuration: phaseDuration) else { return }
+  func play(
+    _ cue: AudioCue,
+    for phase: BreathPhase.Kind,
+    phaseDuration: TimeInterval? = nil,
+    style: CueStyle = .crisp
+  ) {
+    guard cue != .off, style.volumeScale > 0 else { return }
+    let buffer = style.continuous
+      ? makeGlideBuffer(for: cue, phase: phase, phaseDuration: phaseDuration, volumeScale: style.volumeScale)
+      : makeBuffer(for: cue, phase: phase, phaseDuration: phaseDuration, volumeScale: style.volumeScale)
+    guard let buffer else { return }
     startIfNeeded()
     player.scheduleBuffer(buffer, at: nil, options: [], completionHandler: nil)
     if !player.isPlaying {
@@ -72,7 +80,8 @@ final class AudioCuePlayer {
   private func makeBuffer(
     for cue: AudioCue,
     phase: BreathPhase.Kind,
-    phaseDuration: TimeInterval?
+    phaseDuration: TimeInterval?,
+    volumeScale: Double = 1.0
   ) -> AVAudioPCMBuffer? {
     let profile = toneProfile(for: cue, phase: phase, phaseDuration: phaseDuration)
     let duration = profile.duration
@@ -100,7 +109,60 @@ final class AudioCuePlayer {
         value = turfWebSample(time: time, frequency: profile.frequency, duration: duration)
       }
 
-      channel[frame] = Float(max(-1, min(1, value * profile.amplitudeScale * 0.65)))
+      channel[frame] = Float(max(-1, min(1, value * profile.amplitudeScale * 0.65 * volumeScale)))
+    }
+
+    return buffer
+  }
+
+  /// A soft, sustained tone that glides in pitch across the phase, giving the
+  /// coherent (continuous) cue style its even, non-startling character.
+  private func makeGlideBuffer(
+    for cue: AudioCue,
+    phase: BreathPhase.Kind,
+    phaseDuration: TimeInterval?,
+    volumeScale: Double
+  ) -> AVAudioPCMBuffer? {
+    let duration = max(phaseDuration ?? 5.0, 1.0)
+    let frames = AVAudioFrameCount(duration * sampleRate)
+    guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames) else { return nil }
+    buffer.frameLength = frames
+    guard let channel = buffer.floatChannelData?[0] else { return nil }
+
+    let inhaleFreq = frequency(for: cue, phase: .inhale)
+    let exhaleFreq = frequency(for: cue, phase: .exhale)
+    let startFreq: Double
+    let endFreq: Double
+    switch phase {
+    case .inhale:
+      startFreq = exhaleFreq
+      endFreq = inhaleFreq
+    case .exhale:
+      startFreq = inhaleFreq
+      endFreq = exhaleFreq
+    case .holdFull:
+      startFreq = inhaleFreq
+      endFreq = inhaleFreq
+    case .holdEmpty:
+      startFreq = exhaleFreq
+      endFreq = exhaleFreq
+    }
+
+    let dt = 1.0 / sampleRate
+    let attack = min(0.8, duration * 0.25)
+    let release = min(1.2, duration * 0.35)
+    var phaseAccumulator = 0.0
+
+    for frame in 0..<Int(frames) {
+      let time = Double(frame) / sampleRate
+      let progress = min(max(time / duration, 0), 1)
+      let eased = 0.5 - 0.5 * cos(Double.pi * progress)
+      let freq = startFreq + (endFreq - startFreq) * eased
+      phaseAccumulator += 2 * .pi * freq * dt
+      let tone = sin(phaseAccumulator) * 0.82 + sin(phaseAccumulator * 2) * 0.12
+      let env = sustainEnvelope(time: time, duration: duration, attack: attack, release: release)
+      let value = tone * env * 0.18 * volumeScale
+      channel[frame] = Float(max(-1, min(1, value)))
     }
 
     return buffer
