@@ -753,7 +753,7 @@ enum CueStyle: Hashable {
 }
 
 enum BreatheSafety {
-  static let disclaimer = "Breathe Clock offers breathing exercises for general wellbeing. It is not medical advice and not a treatment for any condition. Comfort matters more than hitting the numbers — never force a hold or a breath. Stop and rest if you feel faint, breathless, or distressed."
+  static let disclaimer = "Plume offers breathing exercises for general wellbeing. It is not medical advice and not a treatment for any condition. Comfort matters more than hitting the numbers — never force a hold or a breath. Stop and rest if you feel faint, breathless, or distressed."
 
   static let intenseRules = "Practice only while seated or lying down. Never in water, while driving, or standing unsupported. Rapid breathing and breath holds can cause tingling, dizziness, or fainting."
 

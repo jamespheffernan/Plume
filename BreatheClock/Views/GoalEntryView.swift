@@ -63,7 +63,7 @@ struct GoalEntryView: View {
   private var header: some View {
     VStack(alignment: .leading, spacing: 20) {
       HStack(alignment: .center) {
-        Text("Breathe")
+        Text("Plume")
           .font(BreatheFont.display(28, weight: .regular, italic: true))
           .foregroundStyle(scheme.ink)
           .tracking(-0.2)

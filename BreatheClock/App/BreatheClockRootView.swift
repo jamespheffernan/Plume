@@ -163,7 +163,7 @@ private struct SafetyOnboardingView: View {
     VStack(alignment: .leading, spacing: 0) {
       Spacer(minLength: 40)
 
-      Text("Breathe")
+      Text("Plume")
         .font(BreatheFont.display(40, weight: .light, italic: true))
         .foregroundStyle(scheme.ink)
 
