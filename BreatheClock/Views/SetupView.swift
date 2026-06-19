@@ -8,12 +8,6 @@ struct SetupView: View {
   let onBegin: (Routine) -> Void
 
   @State private var showingSafetyGate = false
-  @State private var pace: BreathPace = .full
-
-  /// The routine actually launched — eased pattern swapped in when chosen.
-  private var resolvedRoutine: Routine {
-    routine.resolved(for: pace)
-  }
 
   var body: some View {
     VStack(spacing: 0) {
@@ -41,6 +35,17 @@ struct SetupView: View {
           .padding(.bottom, 34)
 
         content
+
+        if let source = routine.source {
+          Text(source)
+            .font(BreatheFont.utility(11, weight: .light))
+            .foregroundStyle(scheme.muted)
+            .multilineTextAlignment(.center)
+            .lineSpacing(3)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: 300)
+            .padding(.top, 26)
+        }
       }
       .padding(.horizontal, 28)
 
@@ -51,7 +56,6 @@ struct SetupView: View {
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(scheme.paper)
     .animation(.easeInOut(duration: 0.4), value: scheme.id)
-    .animation(.easeInOut(duration: 0.25), value: pace)
     .sheet(isPresented: $showingSafetyGate) {
       safetyGateView
     }
@@ -95,7 +99,7 @@ struct SetupView: View {
 
   @ViewBuilder
   private var patternBlock: some View {
-    if resolvedRoutine.phases.count > 6 {
+    if routine.phases.count > 6 {
       compactPatternBlock
     } else {
       detailedPatternBlock
@@ -105,7 +109,7 @@ struct SetupView: View {
   private var detailedPatternBlock: some View {
     VStack(spacing: 11) {
       HStack(alignment: .firstTextBaseline, spacing: 18) {
-        ForEach(Array(resolvedRoutine.phases.enumerated()), id: \.offset) { index, phase in
+        ForEach(Array(routine.phases.enumerated()), id: \.offset) { index, phase in
           if index > 0 {
             Text("·")
               .font(BreatheFont.display(28, weight: .light))
@@ -122,7 +126,7 @@ struct SetupView: View {
       .lineLimit(1)
 
       HStack(spacing: 22) {
-        ForEach(Array(resolvedRoutine.phases.enumerated()), id: \.offset) { _, phase in
+        ForEach(Array(routine.phases.enumerated()), id: \.offset) { _, phase in
           Text(phase.label)
             .font(BreatheFont.utility(10, weight: .light))
             .foregroundStyle(scheme.muted)
@@ -138,7 +142,7 @@ struct SetupView: View {
 
   private var compactPatternBlock: some View {
     VStack(spacing: 12) {
-      Text(resolvedRoutine.patternText)
+      Text(routine.patternText)
         .font(BreatheFont.display(34, weight: .light))
         .foregroundStyle(scheme.ink)
         .monospacedDigit()
@@ -245,12 +249,6 @@ struct SetupView: View {
 
   private var timedFooter: some View {
     VStack(spacing: 0) {
-      if routine.hasReducedVariant {
-        paceSelector
-          .padding(.horizontal, 24)
-          .padding(.bottom, 22)
-      }
-
       durationPicker
         .padding(.horizontal, 24)
         .padding(.bottom, 24)
@@ -292,44 +290,6 @@ struct SetupView: View {
     }
   }
 
-  private var paceSelector: some View {
-    VStack(spacing: 12) {
-      Text("Pace")
-        .font(BreatheFont.utility(10, weight: .regular))
-        .foregroundStyle(scheme.muted)
-        .tracking(3.1)
-        .textCase(.uppercase)
-
-      HStack(spacing: 5) {
-        ForEach(BreathPace.allCases) { option in
-          Button {
-            pace = option
-          } label: {
-            Text(option.label)
-              .font(BreatheFont.display(18, weight: pace == option ? .regular : .light))
-              .foregroundStyle(pace == option ? scheme.ink : scheme.muted)
-              .frame(maxWidth: .infinity)
-              .padding(.vertical, 8)
-              .overlay(alignment: .bottom) {
-                Rectangle()
-                  .fill(pace == option ? scheme.ink : Color.clear)
-                  .frame(height: 1)
-              }
-          }
-          .buttonStyle(.plain)
-          .accessibilityLabel("\(option.label) pace")
-        }
-      }
-
-      Text(pace == .eased ? "Shorter holds while you build tolerance" : "The full pattern")
-        .font(BreatheFont.utility(10, weight: .light))
-        .foregroundStyle(scheme.muted)
-        .tracking(1.5)
-        .textCase(.uppercase)
-        .padding(.top, 2)
-    }
-  }
-
   private var durationPicker: some View {
     VStack(spacing: 15) {
       Text("Duration")
@@ -367,14 +327,14 @@ struct SetupView: View {
         }
       }
 
-      if let alignmentText = resolvedRoutine.alignmentText(for: selectedDuration) {
+      if let alignmentText = routine.alignmentText(for: selectedDuration) {
         Text(alignmentText)
           .font(BreatheFont.utility(10, weight: .light))
           .foregroundStyle(scheme.muted)
           .tracking(1.5)
           .textCase(.uppercase)
           .padding(.top, 2)
-      } else if resolvedRoutine.hasHoldPhases {
+      } else if routine.hasHoldPhases {
         Text("Audio plays for hold phases too")
           .font(BreatheFont.utility(10, weight: .light))
           .foregroundStyle(scheme.muted)
@@ -432,7 +392,7 @@ struct SetupView: View {
     if routine.requiresAcknowledgement {
       showingSafetyGate = true
     } else {
-      onBegin(resolvedRoutine)
+      onBegin(routine)
     }
   }
 
@@ -459,19 +419,6 @@ struct SetupView: View {
               .lineSpacing(4)
               .fixedSize(horizontal: false, vertical: true)
           }
-
-          VStack(alignment: .leading, spacing: 7) {
-            Text("Avoid or seek advice with")
-              .font(BreatheFont.utility(10, weight: .medium))
-              .foregroundStyle(scheme.muted)
-              .tracking(2.4)
-              .textCase(.uppercase)
-            ForEach(BreatheSafety.contraindications, id: \.self) { item in
-              Text("— \(item)")
-                .font(BreatheFont.utility(13, weight: .light))
-                .foregroundStyle(scheme.ink)
-            }
-          }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
       }
@@ -480,7 +427,7 @@ struct SetupView: View {
       VStack(spacing: 14) {
         Button {
           showingSafetyGate = false
-          onBegin(resolvedRoutine)
+          onBegin(routine)
         } label: {
           Text("I understand — begin")
             .font(BreatheFont.display(18, weight: .regular, italic: true))

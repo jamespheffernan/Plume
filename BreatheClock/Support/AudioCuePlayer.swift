@@ -44,6 +44,15 @@ final class AudioCuePlayer {
     schedule(buffer, loops: false)
   }
 
+  /// A soft pip for a single countdown digit (3 · 2 · 1), pitched to the cue's
+  /// calm note so it previews the timbre, and quieter than the breath cues so it
+  /// reads as an anticipatory lead-in. Plays for every cue style except silence.
+  func playCountdownTick(_ cue: AudioCue, style: CueStyle) {
+    guard cue != .off, style.volumeScale > 0 else { return }
+    guard let buffer = countdownBuffer(for: cue, volumeScale: style.volumeScale) else { return }
+    schedule(buffer, loops: false)
+  }
+
   /// Pre-render the buffers a session will need, off the main thread, so the
   /// first boundary doesn't pay synthesis cost mid-animation.
   func prepare(cue: AudioCue, style: CueStyle, phases: [BreathPhase], cycleDuration: TimeInterval) {
@@ -59,6 +68,7 @@ final class AudioCuePlayer {
         }
       }
       _ = self.completionBuffer(for: cue)
+      _ = self.countdownBuffer(for: cue, volumeScale: style.volumeScale)
     }
   }
 
@@ -165,8 +175,7 @@ final class AudioCuePlayer {
     phaseDuration: TimeInterval?,
     volumeScale: Double
   ) -> AVAudioPCMBuffer? {
-    let holdBucket = (cue == .hum && phase.isHold) ? Int((phaseDuration ?? 0) * 4) : 0
-    let key = "d-\(cue.rawValue)-\(phase)-\(Int(volumeScale * 100))-\(holdBucket)"
+    let key = "d-\(cue.rawValue)-\(phase)-\(Int(volumeScale * 100))"
     return cached(key) {
       let raw = discreteSamples(for: cue, phase: phase, phaseDuration: phaseDuration)
       let scaled = raw.map { $0 * cueGain(for: cue) * volumeScale }
@@ -200,6 +209,23 @@ final class AudioCuePlayer {
       }
       let gain = normalizationGain(for: raw, target: completionPeak)
       return pcmBuffer(raw.map { $0 * gain })
+    }
+  }
+
+  private func countdownBuffer(for cue: AudioCue, volumeScale: Double) -> AVAudioPCMBuffer? {
+    let key = "cd-\(cue.rawValue)-\(Int(volumeScale * 100))"
+    return cached(key) {
+      let duration = 0.5
+      let frequency = self.frequency(for: cue, phase: .exhale)
+      let frames = Int(duration * self.sampleRate)
+      guard frames > 0 else { return nil }
+      var raw = [Double](repeating: 0, count: frames)
+      for frame in 0..<frames {
+        raw[frame] = self.countdownSample(time: Double(frame) / self.sampleRate, frequency: frequency, duration: duration)
+      }
+      // A touch under the breath-cue level so the count leads in, not competes.
+      let gain = self.normalizationGain(for: raw, target: self.targetPeak * 0.6)
+      return self.pcmBuffer(raw.map { $0 * gain * volumeScale })
     }
   }
 
@@ -260,8 +286,6 @@ final class AudioCuePlayer {
       case .off: value = 0
       case .bowl: value = bowlSample(time: time, frequency: profile.frequency, duration: profile.duration)
       case .fork: value = forkSample(time: time, frequency: profile.frequency, duration: profile.duration)
-      case .wood: value = woodSample(time: time, frequency: profile.frequency, duration: profile.duration)
-      case .hum: value = humSample(time: time, frequency: profile.frequency, duration: profile.duration)
       case .turf: value = turfWebSample(time: time, frequency: profile.frequency, duration: profile.duration)
       }
       out[frame] = value * profile.amplitudeScale
@@ -341,8 +365,7 @@ final class AudioCuePlayer {
     switch cue {
     case .bowl: decay = (0.08, 7.6)
     case .fork: decay = (0.005, 8.5)
-    case .wood: decay = (0.003, 9.0)
-    case .hum, .turf, .off: decay = nil
+    case .turf, .off: decay = nil
     }
     guard let decay else { return fullDuration }
     let normalized = log(1 / threshold) / decay.rate
@@ -366,9 +389,7 @@ final class AudioCuePlayer {
       )
     }
 
-    let duration = cue == .hum && isHold
-      ? max(phaseDuration ?? baseDuration, 1.2)
-      : baseDuration * (isHold ? 0.7 : 1.0)
+    let duration = baseDuration * (isHold ? 0.7 : 1.0)
 
     return ToneProfile(
       frequency: frequency(for: cue, phase: phase),
@@ -395,20 +416,6 @@ final class AudioCuePlayer {
       case .exhale: return 329.63
       case .holdEmpty: return 277.18
       }
-    case .wood:
-      switch phase {
-      case .inhale: return 293.66
-      case .holdFull: return 440.00
-      case .exhale: return 220.00
-      case .holdEmpty: return 174.61
-      }
-    case .hum:
-      switch phase {
-      case .inhale: return 220.00
-      case .holdFull: return 329.63
-      case .exhale: return 164.81
-      case .holdEmpty: return 130.81
-      }
     case .turf:
       switch phase {
       case .inhale: return 392.00
@@ -427,10 +434,6 @@ final class AudioCuePlayer {
       return 4.7
     case .fork:
       return 1.5
-    case .wood:
-      return 0.55
-    case .hum:
-      return 4.5
     case .turf:
       return 0.18
     }
@@ -444,10 +447,6 @@ final class AudioCuePlayer {
       return 5.4
     case .fork:
       return 2.2
-    case .wood:
-      return 0.95
-    case .hum:
-      return 4.2
     case .turf:
       return 0.58
     }
@@ -477,22 +476,6 @@ final class AudioCuePlayer {
     let fundamental = sin(2 * .pi * frequency * time)
     let harmonic = sin(2 * .pi * frequency * 2 * time) * 0.08
     return (fundamental + harmonic) * envelope(time: time, duration: duration, attack: 0.005, decay: 8.5) * 0.28
-  }
-
-  private func woodSample(time: Double, frequency: Double, duration: Double) -> Double {
-    let triangle = 2 * abs(2 * ((frequency * time) - floor(frequency * time + 0.5))) - 1
-    let burst = time < 0.04 ? Double.random(in: -1...1) * (1 - time / 0.04) * 0.18 : 0
-    return (triangle * 0.5 + burst) * envelope(time: time, duration: duration, attack: 0.003, decay: 9.0) * 0.42
-  }
-
-  private func humSample(time: Double, frequency: Double, duration: Double) -> Double {
-    let detunes = [-7.0, 0, 6.0]
-    let tone = detunes.reduce(0.0) { partial, cents in
-      let tuned = frequency * pow(2, cents / 1200)
-      let saw = 2 * (tuned * time - floor(0.5 + tuned * time))
-      return partial + saw / Double(detunes.count)
-    }
-    return tone * sustainEnvelope(time: time, duration: duration, attack: 0.6, release: 1.2) * 0.2
   }
 
   private func turfWebSample(time: Double, frequency: Double, duration: Double) -> Double {
@@ -532,17 +515,6 @@ final class AudioCuePlayer {
         ? forkSample(time: time - 0.44, frequency: 440.00, duration: max(duration - 0.44, 0.1)) * 0.72
         : 0
       return (first + second) * 0.9
-    case .wood:
-      return woodCompletionTap(time: time, delay: 0.00, frequency: 293.66, amplitude: 0.75)
-        + woodCompletionTap(time: time, delay: 0.22, frequency: 220.00, amplitude: 0.55)
-        + woodCompletionTap(time: time, delay: 0.44, frequency: 174.61, amplitude: 0.38)
-    case .hum:
-      let root = sin(2 * .pi * 146.83 * time) * 0.76
-      let fifth = sin(2 * .pi * 220.00 * time) * 0.36
-      let octave = sin(2 * .pi * 293.66 * time) * 0.20
-      return (root + fifth + octave)
-        * sustainEnvelope(time: time, duration: duration, attack: 0.45, release: 1.35)
-        * 0.22
     case .turf:
       let first = turfCompletionPip(time: time, frequency: 392.00, duration: 0.2)
       let second = time >= 0.24
@@ -552,19 +524,18 @@ final class AudioCuePlayer {
     }
   }
 
-  private func woodCompletionTap(
-    time: Double,
-    delay: Double,
-    frequency: Double,
-    amplitude: Double
-  ) -> Double {
-    guard time >= delay else { return 0 }
-    return woodSample(time: time - delay, frequency: frequency, duration: 0.55) * amplitude
-  }
-
   private func turfCompletionPip(time: Double, frequency: Double, duration: Double) -> Double {
     guard time <= duration else { return 0 }
     return turfWebSample(time: time, frequency: frequency, duration: duration) * 1.55
+  }
+
+  /// A gentle bell pip: fundamental plus a soft octave, shaped by a raised-cosine
+  /// swell so it fades in and out with no click — calm, not a race-start beep.
+  private func countdownSample(time: Double, frequency: Double, duration: Double) -> Double {
+    let tone = sin(2 * .pi * frequency * time) + sin(2 * .pi * frequency * 2 * time) * 0.12
+    let progress = min(max(time / duration, 0), 1)
+    let bell = 0.5 - 0.5 * cos(2 * .pi * progress)
+    return tone * bell
   }
 
   private func envelope(time: Double, duration: Double, attack: Double, decay: Double) -> Double {
@@ -575,15 +546,6 @@ final class AudioCuePlayer {
     return exp(-decay * normalized)
   }
 
-  private func sustainEnvelope(time: Double, duration: Double, attack: Double, release: Double) -> Double {
-    if time < attack {
-      return max(0, time / attack)
-    }
-    if time > duration - release {
-      return max(0, (duration - time) / release)
-    }
-    return 1
-  }
 }
 
 private struct ToneProfile {

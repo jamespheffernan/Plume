@@ -7,8 +7,10 @@ struct SessionView: View {
   let duration: SessionDuration
   let audioCue: AudioCue
   let hapticsEnabled: Bool
+  let swellHapticsEnabled: Bool
   let onEnd: () -> Void
 
+  @AppStorage("didSeeBreathPrimer") private var didSeeBreathPrimer = false
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   @State private var startDate = Date()
@@ -17,7 +19,7 @@ struct SessionView: View {
   @State private var lastIntroDigit: Int?
   @State private var lastBoundaryKey: String?
   @State private var isComplete = false
-  @State private var showGroundingIntro = false
+  @State private var showPrimer = false
   @State private var startedContinuous = false
 
   private let tick = Timer.publish(every: 0.08, on: .main, in: .common).autoconnect()
@@ -37,8 +39,8 @@ struct SessionView: View {
 
   var body: some View {
     Group {
-      if showGroundingIntro {
-        groundingIntroView
+      if showPrimer {
+        BreathPrimerView(scheme: scheme, reduceMotion: reduceMotion, onBegin: dismissPrimer)
       } else {
         sessionTimeline
       }
@@ -84,17 +86,6 @@ struct SessionView: View {
           }
 
           Spacer(minLength: 34)
-
-          if routine.intensity != .gentle {
-            Text("Stay seated · stop if you feel faint")
-              .font(BreatheFont.utility(9, weight: .light))
-              .foregroundStyle(scheme.muted)
-              .tracking(2)
-              .textCase(.uppercase)
-              .multilineTextAlignment(.center)
-              .padding(.horizontal, 28)
-              .padding(.bottom, 14)
-          }
 
           controls
             .padding(.bottom, 34)
@@ -154,9 +145,11 @@ struct SessionView: View {
   private let orbRestScale: Double = 0.32
 
   /// The breathing orb: a quiet vessel ring, a soft halo that swells, and a
-  /// gradient sphere with the count nested inside it.
+  /// gradient sphere with the count nested inside it. At the bottom of an
+  /// exhale the sphere dissolves (fillOpacity → 0) into the empty ring while the
+  /// numeral crossfades white → ink, so the count stays readable on paper.
   @ViewBuilder
-  private func breathOrb(size: CGFloat, scale: Double, halo: Double, digit: Int) -> some View {
+  private func breathOrb(size: CGFloat, scale: Double, halo: Double, fillOpacity: Double, digit: Int) -> some View {
     Circle()
       .stroke(scheme.ink.opacity(0.4), lineWidth: 1)
       .frame(width: size, height: size)
@@ -166,7 +159,7 @@ struct SessionView: View {
       .frame(width: size, height: size)
       .scaleEffect(scale * 1.04)
       .blur(radius: 26)
-      .opacity(halo)
+      .opacity(halo * fillOpacity * fillOpacity)
 
     Circle()
       .fill(
@@ -179,16 +172,21 @@ struct SessionView: View {
       )
       .frame(width: size, height: size)
       .scaleEffect(scale)
+      .opacity(fillOpacity)
 
-    Text("\(digit)")
-      .font(BreatheFont.display(size * 0.52, weight: .ultraLight))
-      .foregroundStyle(Color.white)
-      .monospacedDigit()
-      .tracking(-4)
-      .blendMode(.difference)
-      .scaleEffect(scale)
-      .id(digit)
-      .transition(.opacity.animation(.easeOut(duration: reduceMotion ? 0 : 0.22)))
+    ZStack {
+      Text("\(digit)")
+        .foregroundStyle(scheme.ink)
+      Text("\(digit)")
+        .foregroundStyle(Color.white)
+        .opacity(fillOpacity)
+    }
+    .font(BreatheFont.display(size * 0.52, weight: .ultraLight))
+    .monospacedDigit()
+    .tracking(-4)
+    .scaleEffect(scale)
+    .id(digit)
+    .transition(.opacity.animation(.easeOut(duration: reduceMotion ? 0 : 0.22)))
   }
 
   private func introStage(remaining: TimeInterval) -> some View {
@@ -207,6 +205,7 @@ struct SessionView: View {
             size: size,
             scale: scale,
             halo: reduceMotion ? 0.12 : 0.08 + 0.06 * remainingFraction,
+            fillOpacity: 1,
             digit: digit
           )
         }
@@ -229,13 +228,23 @@ struct SessionView: View {
       GeometryReader { geometry in
         let size = min(geometry.size.width * 0.78, 288)
         let raw = reduceMotion ? 0.5 : state.pupilScale
-        let scale = orbRestScale + (1 - orbRestScale) * raw
+        // The orb grows straight from its rest size the instant the breath
+        // turns — no frozen dead zone where it fills before it moves.
+        let restScale = 0.30
+        let scale = reduceMotion ? 0.66 : restScale + (1 - restScale) * raw
+        // Fill and grow happen together. Coming out of the empty hold the inhale
+        // fills in fast (by ~10% of the breath) while the orb is already
+        // swelling; the exhale empties more gently (over ~20%), so the fill-in
+        // reads as quicker than the previous fill-out, settling to an empty ring.
+        let fillThreshold = state.phase.kind == .inhale ? 0.10 : 0.20
+        let fillOpacity = reduceMotion ? 1 : min(1, max(0, raw / fillThreshold))
 
         ZStack {
           breathOrb(
             size: size,
             scale: scale,
             halo: reduceMotion ? 0.16 : 0.09 + 0.17 * raw,
+            fillOpacity: fillOpacity,
             digit: state.countdownDigit
           )
         }
@@ -271,83 +280,45 @@ struct SessionView: View {
     .frame(maxWidth: .infinity)
   }
 
-  private var groundingIntroView: some View {
-    VStack(alignment: .leading, spacing: 0) {
-      Spacer(minLength: 56)
-
-      Text("Before you begin")
-        .font(BreatheFont.utility(11, weight: .medium))
-        .foregroundStyle(scheme.muted)
-        .tracking(3)
-        .textCase(.uppercase)
-        .padding(.bottom, 18)
-
-      Text("Lie down somewhere you feel safe.")
-        .font(BreatheFont.display(30, weight: .light, italic: true))
-        .foregroundStyle(scheme.ink)
-        .lineSpacing(3)
-        .padding(.bottom, 20)
-
-      Text("Connected breathing can surface strong emotion and physical sensation. Let your body be fully supported. There is nothing to push for — you can slow the pace or stop at any time.")
-        .font(BreatheFont.utility(14, weight: .regular))
-        .foregroundStyle(scheme.ink)
-        .lineSpacing(5)
-        .fixedSize(horizontal: false, vertical: true)
-
-      Spacer()
-
-      Button(action: beginAfterGrounding) {
-        Text("I'm settled — begin")
-          .font(BreatheFont.display(18, weight: .regular, italic: true))
-          .foregroundStyle(scheme.paper)
-          .frame(maxWidth: .infinity)
-          .frame(height: 62)
-          .background(Capsule().fill(scheme.ink))
-      }
-      .buttonStyle(.plain)
-      .padding(.bottom, 16)
-
-      Button(action: onEnd) {
-        Text("Back")
-          .font(BreatheFont.utility(11, weight: .medium))
-          .foregroundStyle(scheme.muted)
-          .tracking(3)
-          .textCase(.uppercase)
-          .frame(height: 30)
-          .frame(maxWidth: .infinity)
-      }
-      .buttonStyle(.plain)
-
-      Spacer(minLength: 24)
-    }
-    .padding(.horizontal, 30)
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(scheme.paper)
-  }
-
   private var controls: some View {
-    HStack(spacing: 30) {
-      textControl("Restart", action: restart)
-      textControl(isPaused ? "Resume" : "Pause", primary: true, action: togglePause)
-      textControl("End", action: onEnd)
+    HStack(spacing: 12) {
+      ghostControl("Restart", action: restart)
+      primaryControl(isPaused ? "Resume" : "Pause", action: togglePause)
+      ghostControl("End", action: onEnd)
     }
+    .padding(.horizontal, 28)
     .disabled(isComplete)
     .opacity(isComplete ? 0.35 : 1)
   }
 
-  private func textControl(_ title: String, primary: Bool = false, action: @escaping () -> Void) -> some View {
+  /// The filled capsule that anchors the control row — the one action most
+  /// likely wanted mid-session, so it reads as the obvious target.
+  private func primaryControl(_ title: String, action: @escaping () -> Void) -> some View {
     Button(action: action) {
       Text(title)
-        .font(BreatheFont.utility(11, weight: primary ? .medium : .regular))
-        .foregroundStyle(scheme.ink)
-        .tracking(3.1)
+        .font(BreatheFont.utility(12, weight: .semibold))
+        .tracking(2.4)
         .textCase(.uppercase)
-        .padding(.vertical, 6)
-        .overlay(alignment: .bottom) {
-          Rectangle()
-            .fill(scheme.ink)
-            .frame(height: primary ? 2 : 1)
-        }
+        .foregroundStyle(scheme.paper)
+        .frame(maxWidth: .infinity)
+        .frame(height: 52)
+        .background(Capsule().fill(scheme.ink))
+    }
+    .buttonStyle(.plain)
+  }
+
+  /// Quieter outlined capsules either side of the primary action.
+  private func ghostControl(_ title: String, action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+      Text(title)
+        .font(BreatheFont.utility(11, weight: .regular))
+        .tracking(2.4)
+        .textCase(.uppercase)
+        .foregroundStyle(scheme.ink)
+        .frame(maxWidth: .infinity)
+        .frame(height: 52)
+        .overlay(Capsule().stroke(scheme.ink.opacity(0.25), lineWidth: 1))
+        .contentShape(Capsule())
     }
     .buttonStyle(.plain)
   }
@@ -404,10 +375,11 @@ struct SessionView: View {
 
       Spacer()
 
-      HStack(spacing: 30) {
-        textControl("Restart", action: restart)
-        textControl("Done", primary: true, action: onEnd)
+      HStack(spacing: 12) {
+        ghostControl("Restart", action: restart)
+        primaryControl("Done", action: onEnd)
       }
+      .padding(.horizontal, 28)
       .padding(.bottom, 34)
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -440,7 +412,7 @@ struct SessionView: View {
   }
 
   private func handleTick(_ date: Date) {
-    guard !isPaused, !isComplete, !showGroundingIntro else { return }
+    guard !isPaused, !isComplete, !showPrimer else { return }
 
     let introRemaining = introCountdownRemaining(at: date)
     if introRemaining > 0 {
@@ -486,13 +458,23 @@ struct SessionView: View {
   }
 
   private func triggerBoundaryHaptic(for phase: BreathPhase) {
-    guard hapticsEnabled, let feel = breathFeel(for: cueStyle) else { return }
+    guard let feel = breathFeel(for: cueStyle) else { return }
 
-    // On haptic-capable devices the breath is felt as a swell; otherwise fall
-    // back to a single impact tap at the boundary.
     if BreathHaptics.shared.isSupported {
-      BreathHaptics.shared.playBreath(phase: phase.kind, duration: phase.seconds, feel: feel)
-    } else if let impact = impactStyle(for: cueStyle) {
+      // Inhale/exhale use the continuous swell; holds use a tick.
+      // Each has its own toggle so the swell can be silenced without losing ticks.
+      switch phase.kind {
+      case .inhale, .exhale:
+        guard swellHapticsEnabled else {
+          BreathHaptics.shared.stop()
+          return
+        }
+        BreathHaptics.shared.playBreath(phase: phase.kind, duration: phase.seconds, feel: feel)
+      case .holdFull, .holdEmpty:
+        guard hapticsEnabled else { return }
+        BreathHaptics.shared.playBreath(phase: phase.kind, duration: phase.seconds, feel: feel)
+      }
+    } else if hapticsEnabled, let impact = impactStyle(for: cueStyle) {
       UIImpactFeedbackGenerator(style: impact.style).impactOccurred(intensity: impact.intensity)
     }
   }
@@ -518,6 +500,7 @@ struct SessionView: View {
   }
 
   private func triggerIntroCue() {
+    AudioCuePlayer.shared.playCountdownTick(audioCue, style: cueStyle)
     if hapticsEnabled {
       let generator = UIImpactFeedbackGenerator(style: .soft)
       generator.impactOccurred(intensity: 0.55)
@@ -540,9 +523,9 @@ struct SessionView: View {
       phases: routine.phases,
       cycleDuration: routine.cycleDuration
     )
-    if hapticsEnabled { BreathHaptics.shared.prepare() }
+    if hapticsEnabled || swellHapticsEnabled { BreathHaptics.shared.prepare() }
     restart()
-    showGroundingIntro = needsGrounding
+    showPrimer = !didSeeBreathPrimer
   }
 
   private func restart() {
@@ -557,8 +540,9 @@ struct SessionView: View {
     isComplete = false
   }
 
-  private func beginAfterGrounding() {
-    showGroundingIntro = false
+  private func dismissPrimer() {
+    didSeeBreathPrimer = true
+    showPrimer = false
     restart()
   }
 
@@ -572,5 +556,124 @@ struct SessionView: View {
       AudioCuePlayer.shared.setSustainedPaused(true)
       BreathHaptics.shared.stop()
     }
+  }
+}
+
+/// A one-time demo shown before a user's first session: the orb grows on the
+/// inhale, rests through the hold, and shrinks on the exhale, with the live
+/// label beneath it — so the breathing language is learned before the count.
+private struct BreathPrimerView: View {
+  let scheme: BreatheScheme
+  let reduceMotion: Bool
+  let onBegin: () -> Void
+
+  @State private var start = Date()
+
+  private struct Step {
+    let label: String
+    let seconds: Double
+    let from: Double
+    let to: Double
+  }
+
+  private let steps: [Step] = [
+    Step(label: "Breathe in", seconds: 4, from: 0, to: 1),
+    Step(label: "Hold", seconds: 2, from: 1, to: 1),
+    Step(label: "Breathe out", seconds: 4, from: 1, to: 0),
+    Step(label: "Hold", seconds: 2, from: 0, to: 0)
+  ]
+
+  private var cycle: Double { steps.reduce(0) { $0 + $1.seconds } }
+
+  private func sample(at elapsed: Double) -> (scale: Double, label: String) {
+    let floorScale = 0.30
+    guard cycle > 0 else { return (floorScale, steps.first?.label ?? "") }
+    let position = elapsed.truncatingRemainder(dividingBy: cycle)
+    var cursor = 0.0
+    for (index, step) in steps.enumerated() {
+      let end = cursor + step.seconds
+      if position < end || index == steps.count - 1 {
+        let progress = min(max((position - cursor) / step.seconds, 0), 1)
+        let eased = 0.5 - 0.5 * cos(Double.pi * progress)
+        let value = step.from + (step.to - step.from) * eased
+        return (floorScale + (1 - floorScale) * value, step.label)
+      }
+      cursor = end
+    }
+    return (floorScale, steps[0].label)
+  }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      Spacer(minLength: 48)
+
+      Text("How it works")
+        .font(BreatheFont.utility(11, weight: .medium))
+        .foregroundStyle(scheme.muted)
+        .tracking(3)
+        .textCase(.uppercase)
+        .padding(.bottom, 14)
+
+      Text("Follow the circle.")
+        .font(BreatheFont.display(32, weight: .light, italic: true))
+        .foregroundStyle(scheme.ink)
+        .padding(.bottom, 10)
+
+      Text("It grows as you breathe in, rests while you hold, and shrinks as you breathe out. The number inside counts the seconds.")
+        .font(BreatheFont.utility(14, weight: .regular))
+        .foregroundStyle(scheme.ink)
+        .lineSpacing(5)
+        .fixedSize(horizontal: false, vertical: true)
+
+      Spacer(minLength: 20)
+
+      TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
+        let result = sample(at: context.date.timeIntervalSince(start))
+        let scale = reduceMotion ? 0.66 : result.scale
+
+        VStack(spacing: 26) {
+          GeometryReader { geometry in
+            let size = min(geometry.size.width * 0.6, 220)
+            ZStack {
+              Circle()
+                .stroke(scheme.ink.opacity(0.4), lineWidth: 1)
+                .frame(width: size, height: size)
+              Circle()
+                .fill(scheme.ink)
+                .frame(width: size, height: size)
+                .scaleEffect(scale)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+          }
+          .frame(height: 236)
+
+          Text(result.label)
+            .font(BreatheFont.utility(12, weight: .light))
+            .foregroundStyle(scheme.muted)
+            .tracking(5)
+            .textCase(.uppercase)
+            .id(result.label)
+            .transition(.opacity.animation(.easeInOut(duration: reduceMotion ? 0 : 0.2)))
+            .frame(height: 16)
+        }
+      }
+
+      Spacer(minLength: 20)
+
+      Button(action: onBegin) {
+        Text("Begin")
+          .font(BreatheFont.display(18, weight: .regular, italic: true))
+          .foregroundStyle(scheme.paper)
+          .frame(maxWidth: .infinity)
+          .frame(height: 62)
+          .background(Capsule().fill(scheme.ink))
+      }
+      .buttonStyle(.plain)
+
+      Spacer(minLength: 24)
+    }
+    .padding(.horizontal, 30)
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(scheme.paper)
   }
 }

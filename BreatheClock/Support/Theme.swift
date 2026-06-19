@@ -4,31 +4,22 @@ enum BreatheScheme: String, CaseIterable, Identifiable {
   case charcoal
   case sage
   case indigo
-  case plum
-  case ochre
-  case slate
 
   var id: String { rawValue }
 
   var name: String {
     switch self {
-    case .charcoal: return "Charcoal"
+    case .charcoal: return "Newsprint"
     case .sage: return "Sage"
-    case .indigo: return "Indigo"
-    case .plum: return "Plum"
-    case .ochre: return "Ochre"
-    case .slate: return "Slate"
+    case .indigo: return "Evening"
     }
   }
 
   var mood: String {
     switch self {
-    case .charcoal: return "Newsprint"
+    case .charcoal: return "Warm grey"
     case .sage: return "Apothecary"
-    case .indigo: return "Evening"
-    case .plum: return "Chamber"
-    case .ochre: return "Archive"
-    case .slate: return "Stone"
+    case .indigo: return "Dusk"
     }
   }
 
@@ -40,56 +31,38 @@ enum BreatheScheme: String, CaseIterable, Identifiable {
       return "SageAppIcon"
     case .indigo:
       return "IndigoAppIcon"
-    case .plum:
-      return "PlumAppIcon"
-    case .ochre:
-      return "OchreAppIcon"
-    case .slate:
-      return "SlateAppIcon"
     }
   }
 
   var paper: Color {
     switch self {
     case .charcoal: return Color(hex: 0xF1EAD8)
-    case .sage: return Color(hex: 0xEBE8D3)
-    case .indigo: return Color(hex: 0xE6DFC8)
-    case .plum: return Color(hex: 0xF0E8D3)
-    case .ochre: return Color(hex: 0xEDE5C8)
-    case .slate: return Color(hex: 0xE6E4DA)
+    case .sage: return Color(hex: 0xE7E6D2)
+    case .indigo: return Color(hex: 0xE7E0CC)
     }
   }
 
   var ink: Color {
     switch self {
     case .charcoal: return Color(hex: 0x2E2A25)
-    case .sage: return Color(hex: 0x3D4A3E)
-    case .indigo: return Color(hex: 0x1F2A44)
-    case .plum: return Color(hex: 0x3A2832)
-    case .ochre: return Color(hex: 0x3A2C1C)
-    case .slate: return Color(hex: 0x2A323A)
+    case .sage: return Color(hex: 0x34423A)
+    case .indigo: return Color(hex: 0x222D49)
     }
   }
 
   var accent: Color {
     switch self {
     case .charcoal: return Color(hex: 0xB8533C)
-    case .sage: return Color(hex: 0xB8553F)
-    case .indigo: return Color(hex: 0xC89554)
-    case .plum: return Color(hex: 0x8AA080)
-    case .ochre: return Color(hex: 0x4A6580)
-    case .slate: return Color(hex: 0xB8855A)
+    case .sage: return Color(hex: 0xA6762E)
+    case .indigo: return Color(hex: 0xC18F3D)
     }
   }
 
   var muted: Color {
     switch self {
     case .charcoal: return Color(hex: 0x7A6F64)
-    case .sage: return Color(hex: 0x7A8478)
-    case .indigo: return Color(hex: 0x6C7090)
-    case .plum: return Color(hex: 0x8A6C78)
-    case .ochre: return Color(hex: 0x8A7A5A)
-    case .slate: return Color(hex: 0x6A7280)
+    case .sage: return Color(hex: 0x73806F)
+    case .indigo: return Color(hex: 0x6A6F88)
     }
   }
 

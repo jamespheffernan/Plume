@@ -6,7 +6,7 @@ struct SettingsView: View {
   @Binding var schemeSelection: BreatheScheme
   @Binding var audioCue: AudioCue
   @Binding var hapticsEnabled: Bool
-  @Binding var startOnGoals: Bool
+  @Binding var swellHapticsEnabled: Bool
   let onBack: () -> Void
 
   @AppStorage("lastBoltScore") private var lastBoltScore = 0
@@ -62,10 +62,28 @@ struct SettingsView: View {
         settingsSection(title: "Haptics", topPadding: 34) {
           HStack(alignment: .center, spacing: 18) {
             VStack(alignment: .leading, spacing: 4) {
-              Text("Phase haptics")
+              Text("Breath swell")
                 .font(BreatheFont.display(17, weight: .regular))
                 .foregroundStyle(scheme.ink)
-              Text("Light tap at each turn of breath")
+              Text("Gradual vibration during inhale and exhale")
+                .font(BreatheFont.utility(12, weight: .light))
+                .foregroundStyle(scheme.muted)
+            }
+
+            Spacer()
+
+            Toggle("", isOn: $swellHapticsEnabled)
+              .labelsHidden()
+              .tint(scheme.ink)
+          }
+          .padding(.vertical, 5)
+
+          HStack(alignment: .center, spacing: 18) {
+            VStack(alignment: .leading, spacing: 4) {
+              Text("Phase taps")
+                .font(BreatheFont.display(17, weight: .regular))
+                .foregroundStyle(scheme.ink)
+              Text("Tap at holds, session start, and completion")
                 .font(BreatheFont.utility(12, weight: .light))
                 .foregroundStyle(scheme.muted)
             }
@@ -73,26 +91,6 @@ struct SettingsView: View {
             Spacer()
 
             Toggle("", isOn: $hapticsEnabled)
-              .labelsHidden()
-              .tint(scheme.ink)
-          }
-          .padding(.vertical, 5)
-        }
-
-        settingsSection(title: "Start screen", topPadding: 34) {
-          HStack(alignment: .center, spacing: 18) {
-            VStack(alignment: .leading, spacing: 4) {
-              Text("Open on goals")
-                .font(BreatheFont.display(17, weight: .regular))
-                .foregroundStyle(scheme.ink)
-              Text("Choose a goal before browsing practices")
-                .font(BreatheFont.utility(12, weight: .light))
-                .foregroundStyle(scheme.muted)
-            }
-
-            Spacer()
-
-            Toggle("", isOn: $startOnGoals)
               .labelsHidden()
               .tint(scheme.ink)
           }

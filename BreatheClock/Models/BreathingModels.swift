@@ -9,9 +9,11 @@ struct Routine: Identifiable, Hashable {
   let intensity: Intensity
   let safetyNote: String?
   let patternOverride: String?
-  let reducedPhases: [BreathPhase]?
   let program: [ProgramStage]?
   let mode: RoutineMode
+  /// Where the technique comes from — shown on the Setup screen so the
+  /// practice is clearly an established method, not the app's invention.
+  let source: String?
 
   init(
     id: String,
@@ -22,9 +24,9 @@ struct Routine: Identifiable, Hashable {
     intensity: Intensity = .gentle,
     safetyNote: String? = nil,
     patternOverride: String? = nil,
-    reducedPhases: [BreathPhase]? = nil,
     program: [ProgramStage]? = nil,
-    mode: RoutineMode = .paced
+    mode: RoutineMode = .paced,
+    source: String? = nil
   ) {
     self.id = id
     self.category = category
@@ -34,9 +36,9 @@ struct Routine: Identifiable, Hashable {
     self.intensity = intensity
     self.safetyNote = safetyNote
     self.patternOverride = patternOverride
-    self.reducedPhases = reducedPhases
     self.program = program
     self.mode = mode
+    self.source = source
   }
 
   var isTimed: Bool {
@@ -50,10 +52,6 @@ struct Routine: Identifiable, Hashable {
     !(program?.isEmpty ?? true)
   }
 
-  var hasReducedVariant: Bool {
-    !(reducedPhases?.isEmpty ?? true)
-  }
-
   /// The outcome family drives sensory matching (cue intensity, grounding).
   var outcomeFamily: OutcomeFamily {
     if mode == .assessment { return .assessment }
@@ -61,31 +59,11 @@ struct Routine: Identifiable, Hashable {
     switch category {
     case "Calm": return .downRegulate
     case "Focus": return .focus
-    case "Train": return .train
     case "Contemplative": return .contemplative
     case "Energize": return .upRegulate
     case "Release": return .somaticRelease
     default: return .downRegulate
     }
-  }
-
-  /// Returns the routine with its eased pattern swapped in, when a reduced
-  /// variant exists and the eased pace is selected. Otherwise returns self.
-  func resolved(for pace: BreathPace) -> Routine {
-    guard pace == .eased, let reducedPhases, !reducedPhases.isEmpty else { return self }
-    return Routine(
-      id: id,
-      category: category,
-      name: name,
-      description: description,
-      phases: reducedPhases,
-      intensity: intensity,
-      safetyNote: safetyNote,
-      patternOverride: patternOverride,
-      reducedPhases: reducedPhases,
-      program: program,
-      mode: mode
-    )
   }
 
   var patternText: String {
@@ -243,7 +221,8 @@ struct Routine: Identifiable, Hashable {
     phases: [
       BreathPhase(kind: .inhale, seconds: 5.5),
       BreathPhase(kind: .exhale, seconds: 5.5)
-    ]
+    ],
+    source: "Resonance (coherent) breathing at ~6 breaths per minute; studied in HRV-biofeedback research by Lehrer and Gevirtz."
   )
 
   private static func wimHofRoundPhases() -> [BreathPhase] {
@@ -306,7 +285,8 @@ struct Routine: Identifiable, Hashable {
       phases: [
         BreathPhase(kind: .inhale, seconds: 4),
         BreathPhase(kind: .exhale, seconds: 8)
-      ]
+      ],
+      source: "Extended-exhale breathing — long used in pranayama and slow-breathing research to engage the parasympathetic response."
     ),
     Routine(
       id: "sleep",
@@ -318,12 +298,7 @@ struct Routine: Identifiable, Hashable {
         BreathPhase(kind: .holdFull, seconds: 7),
         BreathPhase(kind: .exhale, seconds: 8)
       ],
-      safetyNote: "If the seven-count hold feels hard, shorten it. The breath should never feel forced.",
-      reducedPhases: [
-        BreathPhase(kind: .inhale, seconds: 4),
-        BreathPhase(kind: .holdFull, seconds: 4),
-        BreathPhase(kind: .exhale, seconds: 6)
-      ]
+      source: "The 4-7-8 technique, popularized by Dr. Andrew Weil."
     ),
     Routine(
       id: "physiological-sigh",
@@ -334,7 +309,8 @@ struct Routine: Identifiable, Hashable {
         BreathPhase(kind: .inhale, seconds: 2),
         BreathPhase(kind: .inhale, seconds: 1),
         BreathPhase(kind: .exhale, seconds: 8)
-      ]
+      ],
+      source: "Cyclic sighing — studied at Stanford (Balban et al., 2023) and popularized by Andrew Huberman."
     ),
     .coherence,
     Routine(
@@ -348,13 +324,7 @@ struct Routine: Identifiable, Hashable {
         BreathPhase(kind: .exhale, seconds: 4),
         BreathPhase(kind: .holdEmpty, seconds: 4)
       ],
-      safetyNote: "If the holds create strain, drop to a shorter count and build gradually.",
-      reducedPhases: [
-        BreathPhase(kind: .inhale, seconds: 3),
-        BreathPhase(kind: .holdFull, seconds: 3),
-        BreathPhase(kind: .exhale, seconds: 3),
-        BreathPhase(kind: .holdEmpty, seconds: 3)
-      ]
+      source: "Box breathing (tactical breathing), used widely in military and first-responder training."
     ),
     Routine(
       id: "box-5",
@@ -366,50 +336,8 @@ struct Routine: Identifiable, Hashable {
         BreathPhase(kind: .holdFull, seconds: 5),
         BreathPhase(kind: .exhale, seconds: 5),
         BreathPhase(kind: .holdEmpty, seconds: 5)
-      ]
-    ),
-    Routine(
-      id: "light-breathing",
-      category: "Train",
-      name: "Light Breathing",
-      description: "Slow, light nasal breathing with a short, comfortable pause after the exhale to build CO2 tolerance. Never force the pause.",
-      phases: [
-        BreathPhase(kind: .inhale, seconds: 2),
-        BreathPhase(kind: .exhale, seconds: 3),
-        BreathPhase(kind: .holdEmpty, seconds: 3)
       ],
-      safetyNote: "Keep the pause easy. If you gasp on the next breath, it was too long.",
-      reducedPhases: [
-        BreathPhase(kind: .inhale, seconds: 2),
-        BreathPhase(kind: .exhale, seconds: 3),
-        BreathPhase(kind: .holdEmpty, seconds: 1)
-      ]
-    ),
-    Routine(
-      id: "kumbhaka",
-      category: "Train",
-      name: "Kumbhaka",
-      description: "A gentle retention: easy inhale, longer exhale, then a brief empty pause. Back off the moment you feel air hunger.",
-      phases: [
-        BreathPhase(kind: .inhale, seconds: 2),
-        BreathPhase(kind: .exhale, seconds: 4),
-        BreathPhase(kind: .holdEmpty, seconds: 2)
-      ],
-      safetyNote: "Skip or shorten the empty hold if you feel air hunger.",
-      reducedPhases: [
-        BreathPhase(kind: .inhale, seconds: 2),
-        BreathPhase(kind: .exhale, seconds: 4),
-        BreathPhase(kind: .holdEmpty, seconds: 1)
-      ]
-    ),
-    Routine(
-      id: "bolt",
-      category: "Train",
-      name: "BOLT Score",
-      description: "A simple measure of CO2 tolerance. After a normal exhale, time the seconds until the first clear urge to breathe — never your maximum hold.",
-      phases: [],
-      safetyNote: "Measure the first urge, not your limit. Stop if you feel any strain.",
-      mode: .assessment
+      source: "An extended box-breathing variant."
     ),
     Routine(
       id: "bhramari",
@@ -419,7 +347,8 @@ struct Routine: Identifiable, Hashable {
       phases: [
         BreathPhase(kind: .inhale, seconds: 4),
         BreathPhase(kind: .exhale, seconds: 8, humming: true)
-      ]
+      ],
+      source: "Bhramari pranayama (bee breath), a traditional yogic practice."
     ),
     Routine(
       id: "alternate-nostril",
@@ -431,7 +360,8 @@ struct Routine: Identifiable, Hashable {
         BreathPhase(kind: .exhale, seconds: 4, nostrilSide: .right),
         BreathPhase(kind: .inhale, seconds: 4, nostrilSide: .right),
         BreathPhase(kind: .exhale, seconds: 4, nostrilSide: .left)
-      ]
+      ],
+      source: "Nadi shodhana (alternate-nostril breathing), a traditional yogic practice."
     ),
     Routine(
       id: "samadhi",
@@ -440,7 +370,8 @@ struct Routine: Identifiable, Hashable {
       description: "A guided descent toward stillness: settle, find a coherent rhythm, then lengthen the exhale stage by stage. Just follow the count.",
       phases: [],
       patternOverride: "Guided · 4 stages",
-      program: samadhiProgram()
+      program: samadhiProgram(),
+      source: "A Plume sequence built on coherent breathing and progressive exhale lengthening."
     ),
     Routine(
       id: "energy",
@@ -452,7 +383,8 @@ struct Routine: Identifiable, Hashable {
         BreathPhase(kind: .exhale, seconds: 3)
       ],
       intensity: .moderate,
-      safetyNote: "Stay seated. Stop if you feel light-headed or tingly."
+      safetyNote: "Stay seated. Stop if you feel light-headed or tingly.",
+      source: "Brisk paced breathing to raise arousal before effort."
     ),
     Routine(
       id: "wim-hof",
@@ -461,8 +393,9 @@ struct Routine: Identifiable, Hashable {
       description: "Rounds of brisk, full breaths, then an exhale hold and a recovery breath. Intense — never in water, while driving, or standing.",
       phases: wimHofRoundPhases(),
       intensity: .intense,
-      safetyNote: "Thirty brisk breaths, then an exhale hold, then a recovery breath. Sit or lie down, and end early if you feel faint. Never in water, while driving, or standing.",
-      patternOverride: "Breathe · Hold · Recover"
+      safetyNote: "Sit or lie down, and end early if you feel faint. Never in water, while driving, or standing.",
+      patternOverride: "Breathe · Hold · Recover",
+      source: "The Wim Hof Method, developed by Wim Hof."
     ),
     Routine(
       id: "rebirthing",
@@ -474,12 +407,13 @@ struct Routine: Identifiable, Hashable {
         BreathPhase(kind: .exhale, seconds: 2)
       ],
       intensity: .intense,
-      safetyNote: "Connected breathing can surface strong emotion and cause tingling or dizziness. Lie down somewhere safe and let yourself settle afterward."
+      safetyNote: "Connected breathing can surface strong emotion and cause tingling or dizziness. Lie down somewhere safe and let yourself settle afterward.",
+      source: "Rebirthing-breathwork (conscious connected breathing), developed by Leonard Orr in the 1970s."
     )
   ]
 
   static var grouped: [(category: String, routines: [Routine])] {
-    let categories = ["Calm", "Focus", "Train", "Contemplative", "Energize", "Release"]
+    let categories = ["Calm", "Focus", "Contemplative", "Energize", "Release"]
     return categories.compactMap { category in
       let routines = all.filter { $0.category == category }
       return routines.isEmpty ? nil : (category, routines)
@@ -627,8 +561,6 @@ enum AudioCue: String, CaseIterable, Identifiable {
   case off
   case bowl
   case fork
-  case wood
-  case hum
   case turf
 
   var id: String { rawValue }
@@ -638,8 +570,6 @@ enum AudioCue: String, CaseIterable, Identifiable {
     case .off: "Off"
     case .bowl: "Bowl"
     case .fork: "Fork"
-    case .wood: "Wood"
-    case .hum: "Hum"
     case .turf: "Turf"
     }
   }
@@ -649,8 +579,6 @@ enum AudioCue: String, CaseIterable, Identifiable {
     case .off: nil
     case .bowl: "Himalayan"
     case .fork: "Pure tone"
-    case .wood: "Mokugyo"
-    case .hum: "Atmospheric"
     case .turf: "Web version"
     }
   }
@@ -690,26 +618,11 @@ enum RoutineMode: String, Hashable {
   case assessment
 }
 
-enum BreathPace: String, Hashable, CaseIterable, Identifiable {
-  case eased
-  case full
-
-  var id: String { rawValue }
-
-  var label: String {
-    switch self {
-    case .eased: "Eased"
-    case .full: "Full"
-    }
-  }
-}
-
 /// Groups routines by the state they target, which drives sensory matching.
 enum OutcomeFamily: Hashable {
   case downRegulate
   case coherence
   case focus
-  case train
   case contemplative
   case upRegulate
   case somaticRelease
@@ -717,7 +630,7 @@ enum OutcomeFamily: Hashable {
 
   var cueStyle: CueStyle {
     switch self {
-    case .downRegulate, .train, .contemplative, .somaticRelease: return .soft
+    case .downRegulate, .contemplative, .somaticRelease: return .soft
     case .coherence: return .coherent
     case .focus, .upRegulate: return .crisp
     case .assessment: return .silent
@@ -753,7 +666,7 @@ enum CueStyle: Hashable {
 }
 
 enum BreatheSafety {
-  static let disclaimer = "Plume offers breathing exercises for general wellbeing. It is not medical advice and not a treatment for any condition. Comfort matters more than hitting the numbers — never force a hold or a breath. Stop and rest if you feel faint, breathless, or distressed."
+  static let disclaimer = "Plume offers breathing exercises for general wellbeing, not medical advice. Never force a breath or a hold, and stop if you feel faint, breathless, or distressed."
 
   static let intenseRules = "Practice only while seated or lying down. Never in water, while driving, or standing unsupported. Rapid breathing and breath holds can cause tingling, dizziness, or fainting."
 

@@ -4,15 +4,14 @@ struct BreatheClockRootView: View {
   @AppStorage("scheme") private var schemeRawValue = BreatheScheme.charcoal.rawValue
   @AppStorage("audio") private var audioRawValue = AudioCue.bowl.rawValue
   @AppStorage("haptics") private var hapticsEnabled = true
+  @AppStorage("hapticsBreathSwell") private var swellHapticsEnabled = true
   @AppStorage("lastRoutine") private var lastRoutineID = Routine.coherence.id
   @AppStorage("durationSeconds") private var durationSeconds = 180
   @AppStorage("didAcknowledgeSafety") private var didAcknowledgeSafety = false
-  @AppStorage("startOnGoals") private var startOnGoals = true
 
-  @State private var route: AppRoute = .goal
+  @State private var route: AppRoute = .library
   @State private var selectedRoutine = Routine.coherence
   @State private var sessionRoutine = Routine.coherence
-  @State private var focusedCategory: String?
   @State private var showSafety = false
 
   var body: some View {
@@ -20,33 +19,15 @@ struct BreatheClockRootView: View {
       activeScheme.paper.ignoresSafeArea()
 
       switch route {
-      case .goal:
-        GoalEntryView(
-          scheme: activeScheme,
-          onChooseCategory: { category in
-            focusedCategory = category
-            navigate(to: .library)
-          },
-          onBrowseAll: {
-            focusedCategory = nil
-            navigate(to: .library)
-          },
-          onSettings: { navigate(to: .settings) }
-        )
-        .transition(.opacity)
-
       case .library:
         LibraryView(
           scheme: activeScheme,
           selectedRoutine: selectedRoutine,
-          focusedCategory: focusedCategory,
           onSelectRoutine: { routine in
             selectedRoutine = routine
             lastRoutineID = routine.id
             navigate(to: .setup)
           },
-          onShowAll: { withAnimation(.easeInOut(duration: 0.25)) { focusedCategory = nil } },
-          onGoals: { navigate(to: .goal) },
           onSettings: { navigate(to: .settings) }
         )
         .transition(.opacity)
@@ -71,6 +52,7 @@ struct BreatheClockRootView: View {
           duration: durationBinding.wrappedValue,
           audioCue: activeAudioCue,
           hapticsEnabled: hapticsEnabled,
+          swellHapticsEnabled: swellHapticsEnabled,
           onEnd: { navigate(to: .setup) }
         )
         .transition(.opacity)
@@ -89,8 +71,8 @@ struct BreatheClockRootView: View {
           schemeSelection: schemeBinding,
           audioCue: audioBinding,
           hapticsEnabled: $hapticsEnabled,
-          startOnGoals: $startOnGoals,
-          onBack: { navigate(to: startOnGoals ? .goal : .library) }
+          swellHapticsEnabled: $swellHapticsEnabled,
+          onBack: { navigate(to: .library) }
         )
         .transition(.opacity)
       }
@@ -105,8 +87,14 @@ struct BreatheClockRootView: View {
     .task {
       selectedRoutine = Routine.byID(lastRoutineID) ?? .coherence
       sessionRoutine = selectedRoutine
-      route = startOnGoals ? .goal : .library
+      route = .library
       showSafety = !didAcknowledgeSafety
+      if let direct = ProcessInfo.processInfo.environment["BC_DIRECT_SESSION"] {
+        selectedRoutine = Routine.byID(direct) ?? .coherence
+        sessionRoutine = selectedRoutine
+        showSafety = false
+        route = .session
+      }
     }
   }
 
@@ -147,7 +135,6 @@ struct BreatheClockRootView: View {
 }
 
 private enum AppRoute {
-  case goal
   case library
   case setup
   case session
@@ -175,36 +162,13 @@ private struct SafetyOnboardingView: View {
         .padding(.top, 10)
         .padding(.bottom, 26)
 
-      ScrollView {
-        VStack(alignment: .leading, spacing: 18) {
-          Text(BreatheSafety.disclaimer)
-            .font(BreatheFont.utility(14, weight: .regular))
-            .foregroundStyle(scheme.ink)
-            .lineSpacing(5)
-            .fixedSize(horizontal: false, vertical: true)
+      Text(BreatheSafety.disclaimer)
+        .font(BreatheFont.utility(15, weight: .regular))
+        .foregroundStyle(scheme.ink)
+        .lineSpacing(5)
+        .fixedSize(horizontal: false, vertical: true)
 
-          Text(BreatheSafety.intenseRules)
-            .font(BreatheFont.utility(13, weight: .light))
-            .foregroundStyle(scheme.muted)
-            .lineSpacing(4)
-            .fixedSize(horizontal: false, vertical: true)
-
-          VStack(alignment: .leading, spacing: 7) {
-            Text("Take extra care with")
-              .font(BreatheFont.utility(10, weight: .medium))
-              .foregroundStyle(scheme.muted)
-              .tracking(2.4)
-              .textCase(.uppercase)
-            ForEach(BreatheSafety.contraindications, id: \.self) { item in
-              Text("— \(item)")
-                .font(BreatheFont.utility(13, weight: .light))
-                .foregroundStyle(scheme.ink)
-            }
-          }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-      }
-      .scrollIndicators(.hidden)
+      Spacer(minLength: 24)
 
       Button(action: onAcknowledge) {
         Text("I understand")
