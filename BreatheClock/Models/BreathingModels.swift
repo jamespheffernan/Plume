@@ -10,7 +10,6 @@ struct Routine: Identifiable, Hashable {
   let safetyNote: String?
   let patternOverride: String?
   let program: [ProgramStage]?
-  let mode: RoutineMode
   /// Where the technique comes from — shown on the Setup screen so the
   /// practice is clearly an established method, not the app's invention.
   let source: String?
@@ -25,7 +24,6 @@ struct Routine: Identifiable, Hashable {
     safetyNote: String? = nil,
     patternOverride: String? = nil,
     program: [ProgramStage]? = nil,
-    mode: RoutineMode = .paced,
     source: String? = nil
   ) {
     self.id = id
@@ -37,15 +35,11 @@ struct Routine: Identifiable, Hashable {
     self.safetyNote = safetyNote
     self.patternOverride = patternOverride
     self.program = program
-    self.mode = mode
     self.source = source
   }
 
   var isTimed: Bool {
-    switch mode {
-    case .assessment: return false
-    case .paced: return isProgram || !phases.isEmpty
-    }
+    isProgram || !phases.isEmpty
   }
 
   var isProgram: Bool {
@@ -54,7 +48,6 @@ struct Routine: Identifiable, Hashable {
 
   /// The outcome family drives sensory matching (cue intensity, grounding).
   var outcomeFamily: OutcomeFamily {
-    if mode == .assessment { return .assessment }
     if id == "coherence" { return .coherence }
     switch category {
     case "Calm": return .downRegulate
@@ -68,7 +61,6 @@ struct Routine: Identifiable, Hashable {
 
   var patternText: String {
     if let patternOverride { return patternOverride }
-    if mode == .assessment { return "Measure" }
     if isProgram { return "Guided" }
     return phases.isEmpty ? "Untimed" : phases.map { $0.displaySeconds }.joined(separator: " · ")
   }
@@ -395,7 +387,7 @@ struct Routine: Identifiable, Hashable {
       intensity: .intense,
       safetyNote: "Sit or lie down, and end early if you feel faint. Never in water, while driving, or standing.",
       patternOverride: "Breathe · Hold · Recover",
-      source: "The Wim Hof Method, developed by Wim Hof."
+      source: "The Wim Hof Method — cyclic hyperventilation followed by breath holds, developed by Wim Hof."
     ),
     Routine(
       id: "rebirthing",
@@ -579,7 +571,7 @@ enum AudioCue: String, CaseIterable, Identifiable {
     case .off: nil
     case .bowl: "Himalayan"
     case .fork: "Pure tone"
-    case .turf: "Web version"
+    case .turf: "Soft pip"
     }
   }
 }
@@ -613,11 +605,6 @@ enum Intensity: String, Hashable {
   case intense
 }
 
-enum RoutineMode: String, Hashable {
-  case paced
-  case assessment
-}
-
 /// Groups routines by the state they target, which drives sensory matching.
 enum OutcomeFamily: Hashable {
   case downRegulate
@@ -626,14 +613,12 @@ enum OutcomeFamily: Hashable {
   case contemplative
   case upRegulate
   case somaticRelease
-  case assessment
 
   var cueStyle: CueStyle {
     switch self {
     case .downRegulate, .contemplative, .somaticRelease: return .soft
     case .coherence: return .coherent
     case .focus, .upRegulate: return .crisp
-    case .assessment: return .silent
     }
   }
 
@@ -648,14 +633,12 @@ enum CueStyle: Hashable {
   case soft       // down-regulation: quiet, sparse, predictable
   case coherent   // coherence: continuous, even, non-startling
   case crisp      // up-regulation / focus: clear count and energy
-  case silent     // assessment: distraction-free
 
   var volumeScale: Double {
     switch self {
     case .soft: return 0.7
     case .coherent: return 0.8
     case .crisp: return 1.0
-    case .silent: return 0
     }
   }
 

@@ -1,0 +1,1078 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Plume Interface Craft Review</title>
+<link rel="icon" href="data:," />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&amp;family=Manrope:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #eee3cf;
+    --paper: #f3ead8;
+    --paper-2: #e8e6d2;
+    --paper-3: #e7e0cc;
+    --ink: #2e2a25;
+    --sage: #34423a;
+    --indigo: #222d49;
+    --muted: #6e6358;
+    --muted-2: #586552;
+    --accent: #b8533c;
+    --gold: #a6762e;
+    --line: rgba(46, 42, 37, 0.16);
+    --soft: rgba(46, 42, 37, 0.055);
+    --shadow: 0 24px 70px rgba(46, 42, 37, 0.12);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 320px),
+      var(--bg);
+    color: var(--ink);
+    font-family: "Manrope", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+
+  a { color: inherit; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 54px 28px 96px; }
+  .eyebrow {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+  }
+  h1, h2, h3 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 300;
+    line-height: 1.05;
+    margin: 0;
+  }
+  h1 {
+    max-width: 900px;
+    margin-top: 10px;
+    font-size: clamp(42px, 7vw, 82px);
+    font-style: italic;
+  }
+  h2 {
+    font-size: clamp(30px, 4vw, 46px);
+    font-style: italic;
+  }
+  h3 {
+    font-size: 24px;
+    font-style: italic;
+  }
+  p { margin: 0; }
+  .lede {
+    max-width: 790px;
+    margin-top: 22px;
+    color: var(--muted);
+    font-size: 18px;
+  }
+  .top-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 26px;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 7px 12px;
+    background: rgba(255,255,255,0.18);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .rule { height: 1px; margin: 42px 0; background: var(--line); }
+
+  .decision-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 36px;
+  }
+  .decision {
+    min-height: 180px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 22px;
+    background: rgba(243,234,216,0.72);
+    box-shadow: var(--shadow);
+  }
+  .decision strong {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .decision p { color: var(--muted); font-size: 14px; }
+  .decision.recommended {
+    background: #2e2a25;
+    color: var(--paper);
+    border-color: rgba(46, 42, 37, 0.35);
+  }
+  .decision.recommended p { color: rgba(243,234,216,0.78); }
+
+  .section-head {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(280px, 0.65fr);
+    gap: 36px;
+    align-items: end;
+    margin-bottom: 26px;
+  }
+  .section-head p { color: var(--muted); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 18px;
+  }
+  .span-4 { grid-column: span 4; }
+  .span-6 { grid-column: span 6; }
+  .span-8 { grid-column: span 8; }
+  .span-12 { grid-column: span 12; }
+
+  .panel {
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: rgba(243,234,216,0.68);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .panel-body { padding: 22px; }
+  .panel-kicker {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+  .panel-title {
+    margin-top: 8px;
+    font-family: "Fraunces", Georgia, serif;
+    font-size: 28px;
+    font-style: italic;
+    line-height: 1.05;
+  }
+  .panel-copy {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .panel-list {
+    display: grid;
+    gap: 11px;
+    margin: 18px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .panel-list li {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    gap: 10px;
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+  .dot {
+    width: 7px;
+    height: 7px;
+    margin-top: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .demo-row {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(220px, 1fr));
+    gap: 18px;
+    overflow-x: auto;
+    padding: 4px 2px 16px;
+    scrollbar-color: rgba(46,42,37,0.25) transparent;
+  }
+  .demo-card {
+    min-width: 236px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: var(--paper);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .demo-stage {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 264px;
+    padding-top: 10px;
+    background:
+      radial-gradient(circle at 50% 35%, rgba(255,255,255,0.34), rgba(255,255,255,0) 46%),
+      linear-gradient(180deg, rgba(255,255,255,0.16), rgba(46,42,37,0.02));
+  }
+  .motion-badge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 4;
+    border: 1px solid rgba(46,42,37,0.13);
+    border-radius: 999px;
+    padding: 5px 8px;
+    background: rgba(243,234,216,0.72);
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+  .demo-card[data-mode="depth"] .motion-badge,
+  .demo-card[data-mode="trace"] .motion-badge,
+  .demo-card[data-mode="lock"] .motion-badge {
+    color: #7f3d30;
+    border-color: rgba(184,83,60,0.22);
+    background: rgba(184,83,60,0.07);
+  }
+  .orb {
+    --scale: 0.42;
+    --fill: 1;
+    --halo: 0.12;
+    --ring: 0.4;
+    --ghost: 0;
+    --ghost-scale: 1;
+    --label: 1;
+    --digit-white: 1;
+    --liquid: 0;
+    position: relative;
+    width: 178px;
+    height: 178px;
+    display: grid;
+    place-items: center;
+  }
+  .orb::before,
+  .orb::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .orb-ring,
+  .orb-ghost {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border: 1px solid rgba(46,42,37,var(--ring));
+    border-radius: 50%;
+  }
+  .orb-ghost {
+    inset: 5px;
+    transform: scale(var(--ghost-scale));
+    opacity: var(--ghost);
+    border-color: rgba(184,83,60,0.52);
+    filter: blur(0.2px);
+  }
+  .orb-halo {
+    position: absolute;
+    z-index: 0;
+    width: 156px;
+    height: 156px;
+    border-radius: 50%;
+    background: var(--ink);
+    filter: blur(24px);
+    opacity: var(--halo);
+    transform: scale(calc(var(--scale) + 0.05));
+  }
+  .sphere {
+    position: absolute;
+    z-index: 1;
+    width: 178px;
+    height: 178px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(circle at 50% 42%, rgba(255,255,255,0.14), rgba(255,255,255,0) 52%),
+      var(--ink);
+    opacity: var(--fill);
+    transform: scale(var(--scale));
+  }
+  .liquid {
+    display: none;
+    position: absolute;
+    inset: auto 0 0;
+    height: calc(var(--liquid) * 100%);
+    background:
+      radial-gradient(circle at 50% 0%, rgba(255,255,255,0.18), rgba(255,255,255,0) 28%),
+      var(--ink);
+    transform-origin: bottom;
+  }
+  .liquid::before {
+    content: "";
+    position: absolute;
+    left: -10%;
+    right: -10%;
+    top: -11px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(46,42,37,0.92);
+  }
+  .demo-card[data-mode="meniscus"] .sphere {
+    background: rgba(46,42,37,0.10);
+    opacity: 1;
+  }
+  .demo-card[data-mode="meniscus"] .liquid { display: block; }
+  .digit {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    font-family: "Fraunces", Georgia, serif;
+    font-size: 68px;
+    font-weight: 300;
+    line-height: 1;
+    transform: scale(var(--scale));
+    transform-origin: center;
+    pointer-events: none;
+  }
+  .digit .ink-digit,
+  .digit .white-digit {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+  .digit .ink-digit { color: var(--ink); opacity: calc(1 - var(--digit-white)); }
+  .digit .white-digit { color: var(--paper); opacity: var(--digit-white); }
+
+  .demo-card[data-mode="depth"] .orb::before {
+    inset: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(184,83,60,0.34);
+    transform: scale(calc(var(--scale) + 0.09));
+    opacity: calc(0.18 + var(--ring) * 0.55);
+  }
+  .demo-card[data-mode="depth"] .orb::after {
+    inset: 25px;
+    border-radius: 50%;
+    border: 1px solid rgba(46,42,37,0.12);
+    transform: scale(calc(var(--scale) + 0.17));
+    opacity: calc(0.12 + var(--halo) * 1.8);
+  }
+
+  .demo-card[data-mode="trace"] .orb-ghost {
+    border-width: 2px;
+    border-color: rgba(184,83,60,0.60);
+  }
+  .demo-card[data-mode="trace"] .orb::before {
+    inset: 18px;
+    border-radius: 50%;
+    border: 1px solid rgba(184,83,60,0.30);
+    transform: scale(calc(var(--ghost-scale) * 0.82));
+    opacity: calc(var(--ghost) * 0.85);
+  }
+  .demo-card[data-mode="trace"] .sphere {
+    box-shadow: 0 0 0 7px rgba(184,83,60,0.055);
+  }
+
+  .demo-card[data-mode="lock"] .orb-ring {
+    border-width: 2px;
+    border-style: dashed;
+  }
+  .demo-card[data-mode="lock"] .orb::before {
+    inset: -5px;
+    border-radius: 50%;
+    background:
+      conic-gradient(
+        from -2deg,
+        rgba(184,83,60,0.82) 0deg 10deg,
+        transparent 10deg 86deg,
+        rgba(46,42,37,0.34) 86deg 94deg,
+        transparent 94deg 176deg,
+        rgba(46,42,37,0.34) 176deg 184deg,
+        transparent 184deg 266deg,
+        rgba(46,42,37,0.34) 266deg 274deg,
+        transparent 274deg 360deg
+      );
+    -webkit-mask: radial-gradient(circle, transparent 72px, #000 73px, #000 78px, transparent 79px);
+    mask: radial-gradient(circle, transparent 72px, #000 73px, #000 78px, transparent 79px);
+    opacity: calc(0.35 + var(--ring) * 0.95);
+    transform: rotate(calc(var(--scale) * 32deg));
+  }
+  .demo-card[data-mode="lock"] .sphere {
+    box-shadow: inset 0 0 0 8px rgba(255,255,255,0.035);
+  }
+
+  .demo-card[data-mode="meniscus"] .orb-ring {
+    border-color: rgba(46,42,37,0.52);
+  }
+  .demo-card[data-mode="meniscus"] .orb-halo {
+    opacity: calc(var(--halo) * 0.42);
+  }
+  .demo-card[data-mode="meniscus"] .sphere {
+    background: rgba(46,42,37,0.045);
+    border: 1px solid rgba(46,42,37,0.22);
+    opacity: 1;
+    transform: scale(1);
+  }
+  .demo-card[data-mode="meniscus"] .liquid { display: block; }
+  .demo-card[data-mode="meniscus"] .digit {
+    transform: scale(0.82);
+  }
+  .phase-label {
+    position: absolute;
+    bottom: 24px;
+    left: 0;
+    right: 0;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.42em;
+    text-align: center;
+    text-transform: uppercase;
+    opacity: var(--label);
+  }
+  .demo-meta {
+    min-height: 170px;
+    border-top: 1px solid var(--line);
+    padding: 18px;
+  }
+  .demo-meta h3 { font-size: 22px; }
+  .demo-meta p {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 14px;
+  }
+  .tag {
+    border: 1px solid rgba(46,42,37,0.12);
+    border-radius: 999px;
+    padding: 4px 8px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+  }
+
+  .matrix {
+    width: 100%;
+    border-collapse: collapse;
+    overflow: hidden;
+    border-radius: 18px;
+    background: rgba(243,234,216,0.72);
+    box-shadow: var(--shadow);
+  }
+  .matrix th, .matrix td {
+    border-bottom: 1px solid var(--line);
+    padding: 15px 16px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .matrix th {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .matrix td {
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+  .matrix td:first-child {
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .matrix tr:last-child td { border-bottom: 0; }
+
+  .score {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 18px;
+    align-items: center;
+  }
+  .score-number {
+    display: grid;
+    place-items: center;
+    width: 96px;
+    height: 96px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    color: var(--paper);
+    background: var(--ink);
+    font-family: "Fraunces", Georgia, serif;
+    font-size: 42px;
+    font-weight: 300;
+  }
+  .score-copy p {
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .ladder {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .level {
+    min-height: 146px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px;
+    background: rgba(255,255,255,0.15);
+  }
+  .level b {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .level p { color: var(--muted); font-size: 13px; }
+
+  .prototype {
+    display: grid;
+    grid-template-columns: 60px minmax(0, 1fr);
+    gap: 18px;
+    padding: 22px 0;
+    border-top: 1px solid var(--line);
+  }
+  .prototype:first-child { border-top: 0; padding-top: 0; }
+  .rank {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--paper);
+    font-family: "Fraunces", Georgia, serif;
+    font-size: 24px;
+    font-weight: 300;
+  }
+  .prototype h3 { font-size: 25px; }
+  .prototype p { margin-top: 8px; color: var(--muted); font-size: 14px; }
+
+  .no-list {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .no-item {
+    border: 1px solid rgba(184,83,60,0.2);
+    border-radius: 14px;
+    padding: 14px;
+    background: rgba(184,83,60,0.055);
+  }
+  .no-item b {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 12px;
+  }
+  .no-item p { color: var(--muted); font-size: 13px; }
+
+  .footer-note {
+    margin-top: 44px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  @media (max-width: 980px) {
+    .decision-strip,
+    .section-head { grid-template-columns: 1fr; }
+    .span-4, .span-6, .span-8 { grid-column: span 12; }
+    .ladder, .no-list { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 720px) {
+    .wrap { padding: 36px 18px 72px; }
+    .decision { min-height: 0; }
+    .matrix { display: block; overflow-x: auto; }
+    .score { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="eyebrow">Plume · Interface Craft Review</div>
+  <h1>Breath transition and feedback decisions</h1>
+  <p class="lede">Four sub-agent passes studied two aspects: the orb transition around inhale, hold, and exhale; and the count, label, audio, and haptic feedback around that same edge.</p>
+
+  <div class="top-meta">
+    <span class="pill">Current code: SessionView.swift</span>
+    <span class="pill">Conceptual range</span>
+    <span class="pill">Conceptual depth</span>
+    <span class="pill">Read-only artifact</span>
+  </div>
+
+  <section class="decision-strip" aria-label="Decision summary">
+    <article class="decision recommended">
+      <strong>Prototype first</strong>
+      <p>Keep the vessel/ring/dissolve concept, but make full inhale fill the circle to the ring. Then split scale, fill, halo, ring, digit, and label timing.</p>
+    </article>
+    <article class="decision">
+      <strong>Prototype second</strong>
+      <p>Try Trace Memory as the richer variant. It adds a faint afterimage at phase boundaries, so the handoff gets material without new instruction copy.</p>
+    </article>
+    <article class="decision">
+      <strong>Hold as risky replacement</strong>
+      <p>Try Liquid Meniscus only if the refined vessel still feels too abstract. It changes the premise from a scaling orb to breath volume inside a vessel.</p>
+    </article>
+  </section>
+
+  <div class="rule"></div>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Aspect 1</div>
+        <h2>What should the orb do at the boundary?</h2>
+      </div>
+      <p>The current system uses one raised-cosine `raw` value for scale, fill, halo, and digit color. That gives coherence, but it makes the handoff feel mathematical. The revised bar is simple: full inhale fills the vessel; exhale empties it.</p>
+    </div>
+
+    <div class="demo-row" aria-label="Animated orb concept samples">
+      <article class="demo-card" data-mode="current">
+        <div class="demo-stage">
+          <div class="motion-badge">one scalar</div>
+          <div class="orb" aria-hidden="true">
+            <div class="orb-ring"></div>
+            <div class="orb-ghost"></div>
+            <div class="orb-halo"></div>
+            <div class="sphere"><div class="liquid"></div></div>
+            <div class="digit"><span class="ink-digit">3</span><span class="white-digit">3</span></div>
+          </div>
+          <div class="phase-label">Inhale</div>
+        </div>
+        <div class="demo-meta">
+          <div class="panel-kicker">Baseline</div>
+          <h3>Current vessel</h3>
+          <p>Scale, fill, halo, and digit color all follow the same breath sample. Full inhale reaches the ring. Exhale fades late. The boundary has no separate choreographic role.</p>
+          <div class="tag-row"><span class="tag">Score 6/10</span><span class="tag">Low risk</span></div>
+        </div>
+      </article>
+
+      <article class="demo-card" data-mode="depth">
+        <div class="demo-stage">
+          <div class="motion-badge">split channels</div>
+          <div class="orb" aria-hidden="true">
+            <div class="orb-ring"></div>
+            <div class="orb-ghost"></div>
+            <div class="orb-halo"></div>
+            <div class="sphere"><div class="liquid"></div></div>
+            <div class="digit"><span class="ink-digit">3</span><span class="white-digit">3</span></div>
+          </div>
+          <div class="phase-label">Inhale</div>
+        </div>
+        <div class="demo-meta">
+          <div class="panel-kicker">Depth vNext</div>
+          <h3>Decoupled vessel</h3>
+          <p>Keep the same circle and ring. Fill completely at the top, smooth the clamp, let halo lag, make the ring catch, and let labels trail the visual edge.</p>
+          <div class="tag-row"><span class="tag">Prototype 1</span><span class="tag">Best fit</span></div>
+        </div>
+      </article>
+
+      <article class="demo-card" data-mode="trace">
+        <div class="demo-stage">
+          <div class="motion-badge">afterimage</div>
+          <div class="orb" aria-hidden="true">
+            <div class="orb-ring"></div>
+            <div class="orb-ghost"></div>
+            <div class="orb-halo"></div>
+            <div class="sphere"><div class="liquid"></div></div>
+            <div class="digit"><span class="ink-digit">3</span><span class="white-digit">3</span></div>
+          </div>
+          <div class="phase-label">Inhale</div>
+        </div>
+        <div class="demo-meta">
+          <div class="panel-kicker">Range option</div>
+          <h3>Trace memory</h3>
+          <p>A faint previous-state ring survives for a second. Full hold keeps the inhale afterimage. Empty hold keeps the absence. The transition gains continuity without words.</p>
+          <div class="tag-row"><span class="tag">Prototype 2</span><span class="tag">Richer</span></div>
+        </div>
+      </article>
+
+      <article class="demo-card" data-mode="lock">
+        <div class="demo-stage">
+          <div class="motion-badge">latch</div>
+          <div class="orb" aria-hidden="true">
+            <div class="orb-ring"></div>
+            <div class="orb-ghost"></div>
+            <div class="orb-halo"></div>
+            <div class="sphere"><div class="liquid"></div></div>
+            <div class="digit"><span class="ink-digit">3</span><span class="white-digit">3</span></div>
+          </div>
+          <div class="phase-label">Inhale</div>
+        </div>
+        <div class="demo-meta">
+          <div class="panel-kicker">Range option</div>
+          <h3>Boundary lock</h3>
+          <p>The orb arrives at a latch. The ring firms for holds, then releases into the next phase. It makes holds intentional, but it may feel too mechanical.</p>
+          <div class="tag-row"><span class="tag">Useful variant</span><span class="tag">Sharper</span></div>
+        </div>
+      </article>
+
+      <article class="demo-card" data-mode="meniscus">
+        <div class="demo-stage">
+          <div class="motion-badge">volume</div>
+          <div class="orb" aria-hidden="true">
+            <div class="orb-ring"></div>
+            <div class="orb-ghost"></div>
+            <div class="orb-halo"></div>
+            <div class="sphere"><div class="liquid"></div></div>
+            <div class="digit"><span class="ink-digit">3</span><span class="white-digit">3</span></div>
+          </div>
+          <div class="phase-label">Inhale</div>
+        </div>
+        <div class="demo-meta">
+          <div class="panel-kicker">Replacement</div>
+          <h3>Liquid meniscus</h3>
+          <p>The orb becomes a vessel with breath volume inside it. It should visibly fill to the lip at the top, then drain. The risk is that it reads as a literal timer.</p>
+          <div class="tag-row"><span class="tag">Prototype 3</span><span class="tag">Higher risk</span></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <div class="rule"></div>
+
+  <section class="grid">
+    <article class="panel span-6">
+      <div class="panel-body">
+        <div class="panel-kicker">Depth verdict</div>
+        <div class="score">
+          <div class="score-number">6</div>
+          <div class="score-copy">
+            <h3>Strong premise, under-choreographed edges</h3>
+            <p>The persistent ring gives the breath a home. The guide never vanishes. The flaw is that full hold and empty hold can read as frozen UI rather than different kinds of stillness.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel span-6">
+      <div class="panel-body">
+        <div class="panel-kicker">What to keep</div>
+        <ul class="panel-list">
+          <li><span class="dot"></span><span>Keep active scale as `0.30 + 0.70 * raw`.</span></li>
+          <li><span class="dot"></span><span>At full inhale, fill reaches the ring. It should not sit as a smaller disc inside the vessel.</span></li>
+          <li><span class="dot"></span><span>Keep inhale fill by roughly raw `0.10` and exhale fade by roughly raw `0.20`.</span></li>
+          <li><span class="dot"></span><span>Keep the persistent ring and the white-to-ink digit crossfade.</span></li>
+          <li><span class="dot"></span><span>Keep one visible phase label below the orb.</span></li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="panel span-12">
+      <div class="panel-body">
+        <div class="panel-kicker">Depth ladder</div>
+        <div class="ladder">
+          <div class="level"><b>Level 6</b><p>Current state. Coherent continuous values, but boundaries lack intent.</p></div>
+          <div class="level"><b>Level 7</b><p>Add boundary windows. Let the visual edge lead the label by 90-140ms.</p></div>
+          <div class="level"><b>Level 8</b><p>Make full and empty holds different. Full feels loaded. Empty feels quiet.</p></div>
+          <div class="level"><b>Level 9</b><p>Replace linear fill clamps with smoothstep clamps. Keep the same thresholds.</p></div>
+          <div class="level"><b>Level 10</b><p>Each boundary reads without text: sealed, released, emptied, reconstituted.</p></div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <div class="rule"></div>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Aspect 2</div>
+        <h2>How should Plume tell you what changed?</h2>
+      </div>
+      <p>The range pass rejected the obvious move: add more instruction. The better premise is that the orb carries time, the label confirms the current phase, and audio or haptics mark the boundary only when the user enabled them.</p>
+    </div>
+
+    <table class="matrix" aria-label="Feedback direction matrix">
+      <thead>
+        <tr>
+          <th>Direction</th>
+          <th>Changed premise</th>
+          <th>Strength</th>
+          <th>Risk</th>
+          <th>Best context</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Motion carries boundary</td>
+          <td>The orb is the instruction.</td>
+          <td>Calm and uncluttered.</td>
+          <td>Too subtle for beginners.</td>
+          <td>Default session.</td>
+        </tr>
+        <tr>
+          <td>Future echo</td>
+          <td>Show the next state before it arrives.</td>
+          <td>Rich signal without copy.</td>
+          <td>Can double the orb.</td>
+          <td>Visual-first users.</td>
+        </tr>
+        <tr>
+          <td>Countdown release</td>
+          <td>Remove measurement near the change.</td>
+          <td>Deep calm.</td>
+          <td>Less exact.</td>
+          <td>Experienced users.</td>
+        </tr>
+        <tr>
+          <td>Sensory lead-in</td>
+          <td>The body receives the cue.</td>
+          <td>Works with eyes closed.</td>
+          <td>Depends on settings and hardware.</td>
+          <td>Audio or haptic users.</td>
+        </tr>
+        <tr>
+          <td>Adaptive intensity</td>
+          <td>Different routines need different edges.</td>
+          <td>Better fit per pattern.</td>
+          <td>More branching and QA.</td>
+          <td>Full product system.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <div class="rule"></div>
+
+  <section class="grid">
+    <article class="panel span-6">
+      <div class="panel-body">
+        <div class="panel-kicker">Feedback depth</div>
+        <h3>Orb-led handoff</h3>
+        <p class="panel-copy">The current hierarchy is right. The digit lives inside the orb. The phase label sits below and confirms. The boundary cue belongs to audio or touch, not more visible words.</p>
+        <ul class="panel-list">
+          <li><span class="dot"></span><span>At 900ms remaining, fade the current label to about 60%.</span></li>
+          <li><span class="dot"></span><span>At the boundary, swap to the next label with the existing short fade.</span></li>
+          <li><span class="dot"></span><span>Return label opacity to full over about 250ms.</span></li>
+          <li><span class="dot"></span><span>Never show zero. The breath turns; it does not stop.</span></li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="panel span-6">
+      <div class="panel-body">
+        <div class="panel-kicker">Accessibility</div>
+        <h3>Give VoiceOver the next phase, not the screen</h3>
+        <p class="panel-copy">Sighted users should still see one label. VoiceOver can carry the near-boundary context without adding visible copy.</p>
+        <ul class="panel-list">
+          <li><span class="dot"></span><span>Orb label: current phase.</span></li>
+          <li><span class="dot"></span><span>Value: "3 seconds remaining."</span></li>
+          <li><span class="dot"></span><span>At 2 seconds or less, add "next inhale", "next hold", or "next exhale".</span></li>
+          <li><span class="dot"></span><span>Avoid spoken announcements every animation frame.</span></li>
+        </ul>
+      </div>
+    </article>
+  </section>
+
+  <div class="rule"></div>
+
+  <section class="grid">
+    <article class="panel span-8">
+      <div class="panel-body">
+        <div class="panel-kicker">Prototype order</div>
+        <div class="prototype">
+          <div class="rank">1</div>
+          <div>
+            <h3>Decoupled vessel</h3>
+            <p>Refine the existing concept first. Make full inhale fill the vessel, then add boundary windows, smoothstep thresholds, halo lag, ring catches, delayed labels, and better accessibility values.</p>
+          </div>
+        </div>
+        <div class="prototype">
+          <div class="rank">2</div>
+          <div>
+            <h3>Trace memory</h3>
+            <p>Add a previous-state afterimage around full and empty holds. This gives the boundary a material handoff while preserving the current orb and label hierarchy.</p>
+          </div>
+        </div>
+        <div class="prototype">
+          <div class="rank">3</div>
+          <div>
+            <h3>Liquid meniscus</h3>
+            <p>Test only if the refined vessel still feels too abstract. It is the strongest replacement, but it changes the visual language more than the app likely needs.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel span-4">
+      <div class="panel-body">
+        <div class="panel-kicker">Implementation surface</div>
+        <h3>Where this would land</h3>
+        <ul class="panel-list">
+          <li><span class="dot"></span><span>`SessionView.pupilStage`: compute visual channels instead of using one shared `raw` path.</span></li>
+          <li><span class="dot"></span><span>`breathOrb`: accept ring opacity, halo opacity, fill opacity, and digit blend separately.</span></li>
+          <li><span class="dot"></span><span>`BreathState`: expose next phase and boundary proximity, or derive them safely in the view.</span></li>
+          <li><span class="dot"></span><span>`BreathHaptics`: shape the first 100ms of inhale and exhale as pickup, not command.</span></li>
+        </ul>
+      </div>
+    </article>
+  </section>
+
+  <div class="rule"></div>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Discard</div>
+        <h2>Strong ideas that should not ship first</h2>
+      </div>
+      <p>These ideas were useful because they define the boundary. They lose because they make Plume louder, more instructional, or less precise.</p>
+    </div>
+    <div class="no-list">
+      <div class="no-item"><b>"Next: Exhale"</b><p>Clear, but it creates a second voice on the screen.</p></div>
+      <div class="no-item"><b>Visible progress ring</b><p>The orb already shows progress. A second meter adds machinery.</p></div>
+      <div class="no-item"><b>Final-second tick</b><p>It turns the handoff into an alert.</p></div>
+      <div class="no-item"><b>Fill before motion</b><p>It recreates the dead zone the current fix removed.</p></div>
+      <div class="no-item"><b>Zero digit</b><p>It feels like expiration. The breath should turn.</p></div>
+    </div>
+  </section>
+
+  <p class="footer-note">Sources: `BreatheClock/Views/SessionView.swift`, `BreatheClock/Models/BreathingModels.swift`, `docs/session-feel-polish-plan.md`, and four read-only sub-agent passes using Interface Craft conceptual range and conceptual depth.</p>
+</main>
+
+<script>
+const clamp = (n, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, n));
+const ease = p => 0.5 - 0.5 * Math.cos(Math.PI * clamp(p));
+const smooth = p => {
+  const x = clamp(p);
+  return x * x * (3 - 2 * x);
+};
+
+function sampleCycle(t) {
+  const cycle = 12;
+  const pos = ((t % cycle) + cycle) % cycle;
+  if (pos < 2) return { kind: "Inhale", progress: pos / 2, remaining: 2 - pos, raw: ease(pos / 2), next: "Hold" };
+  if (pos < 6) return { kind: "Hold", progress: pos - 2, remaining: 6 - pos, raw: 1, next: "Exhale", full: true };
+  if (pos < 8) return { kind: "Exhale", progress: (pos - 6) / 2, remaining: 8 - pos, raw: 1 - ease((pos - 6) / 2), next: "Hold" };
+  if (pos < 9) return { kind: "Hold", progress: pos - 8, remaining: 9 - pos, raw: 0, next: "Inhale", empty: true };
+  return { kind: "Inhale", progress: (pos - 9) / 3, remaining: 12 - pos, raw: ease((pos - 9) / 3), next: "Hold" };
+}
+
+function boundaryCatch(state) {
+  const closeOut = clamp((0.32 - state.remaining) / 0.32);
+  const closeIn = clamp((0.22 - state.progress) / 0.22);
+  return Math.max(closeOut, closeIn);
+}
+
+function values(mode, s) {
+  const raw = s.raw;
+  const isInhale = s.kind === "Inhale";
+  const isExhale = s.kind === "Exhale";
+  const isHold = s.kind === "Hold";
+  const catchEdge = boundaryCatch(s);
+  let scale = 0.30 + 0.70 * raw;
+  let fill = isInhale ? clamp(raw / 0.10) : clamp(raw / 0.20);
+  let halo = (0.09 + 0.17 * raw) * fill * fill;
+  let ring = 0.40;
+  let ghost = 0;
+  let ghostScale = raw > 0.5 ? 1 : 0.35;
+  let digitWhite = fill;
+  let liquid = raw;
+  let labelOpacity = 1;
+
+  if (mode === "depth") {
+    fill = isInhale ? smooth(raw / 0.10) : smooth(raw / 0.20);
+    digitWhite = isInhale ? smooth((fill - 0.35) / 0.40) : smooth(raw / 0.08);
+    halo = smooth((fill - 0.28) / 0.55) * (0.08 + 0.15 * raw);
+    ring = 0.40 + 0.15 * catchEdge;
+    if (s.remaining < 0.9) labelOpacity = 0.60 + 0.40 * clamp((s.remaining - 0.15) / 0.75);
+  }
+
+  if (mode === "trace") {
+    fill = isInhale ? smooth(raw / 0.10) : smooth(raw / 0.20);
+    digitWhite = fill;
+    ghost = (isHold ? 0.28 : 0.10) + 0.34 * catchEdge;
+    ghostScale = s.empty ? 0.34 : s.full ? 1 : raw > 0.5 ? 1 : 0.34;
+    halo = (0.08 + 0.16 * raw) * fill + 0.03 * catchEdge;
+  }
+
+  if (mode === "lock") {
+    const lockedRaw = isInhale ? ease(clamp(s.progress / 0.74)) : isExhale ? 1 - ease(clamp(s.progress / 0.74)) : raw;
+    scale = 0.30 + 0.70 * lockedRaw;
+    fill = isInhale ? smooth(lockedRaw / 0.10) : smooth(lockedRaw / 0.20);
+    digitWhite = fill;
+    ring = 0.48 + 0.28 * catchEdge;
+    halo = (0.07 + 0.16 * lockedRaw) * fill;
+  }
+
+  if (mode === "meniscus") {
+    scale = 0.56 + 0.34 * smooth(raw);
+    fill = 1;
+    liquid = smooth(raw);
+    digitWhite = smooth((raw - 0.18) / 0.36);
+    halo = 0.06 + 0.08 * raw;
+    ring = 0.44 + 0.10 * catchEdge;
+  }
+
+  if (mode === "current") {
+    digitWhite = fill;
+  }
+
+  return {
+    scale,
+    fill,
+    halo,
+    ring,
+    ghost,
+    ghostScale,
+    digitWhite,
+    liquid,
+    labelOpacity
+  };
+}
+
+let animationStartMs;
+
+function tick(now) {
+  if (animationStartMs === undefined) animationStartMs = now;
+  const t = ((now - animationStartMs) / 1000) + 2.08;
+  document.querySelectorAll(".demo-card").forEach((card, index) => {
+    const mode = card.dataset.mode;
+    const state = sampleCycle(t);
+    const v = values(mode, state);
+    const orb = card.querySelector(".orb");
+    const label = card.querySelector(".phase-label");
+    const digit = Math.max(1, Math.ceil(state.remaining));
+
+    orb.style.setProperty("--scale", v.scale.toFixed(3));
+    orb.style.setProperty("--fill", v.fill.toFixed(3));
+    orb.style.setProperty("--halo", v.halo.toFixed(3));
+    orb.style.setProperty("--ring", v.ring.toFixed(3));
+    orb.style.setProperty("--ghost", v.ghost.toFixed(3));
+    orb.style.setProperty("--ghost-scale", v.ghostScale.toFixed(3));
+    orb.style.setProperty("--digit-white", v.digitWhite.toFixed(3));
+    orb.style.setProperty("--liquid", v.liquid.toFixed(3));
+    orb.style.setProperty("--label", v.labelOpacity.toFixed(3));
+
+    card.querySelectorAll(".digit span").forEach(el => { el.textContent = digit; });
+    label.textContent = state.kind;
+    label.style.opacity = v.labelOpacity.toFixed(3);
+  });
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

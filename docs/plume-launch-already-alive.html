@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Plume — Already-Alive launch (depth)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,300;1,9..144,400&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{ --paper:#F1EAD8; --ink:#2E2A25; --accent:#B8533C; --muted:#6E6358; --inkR:46; --inkG:42; --inkB:37; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:#15110d;color:#e9e2d2;font-family:"Manrope",system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:.92em;color:#d9b78b;}
+  .wrap{display:flex;gap:34px;align-items:flex-start;max-width:1180px;margin:0 auto;padding:26px 22px 80px;flex-wrap:wrap;}
+  .stage{flex:0 0 auto;display:flex;flex-direction:column;gap:16px;align-items:center;position:sticky;top:20px;}
+  .titlebar{width:100%;max-width:320px;}
+  .titlebar h1{font-family:"Fraunces",serif;font-weight:300;font-style:italic;font-size:25px;color:#f1ead8;margin:0;}
+  .titlebar p{font-size:12px;color:#9b9384;margin:5px 0 0;line-height:1.5;}
+
+  /* device */
+  .device{position:relative;width:320px;height:670px;border-radius:46px;background:#0c0907;padding:11px;
+    box-shadow:0 26px 60px -22px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.06);}
+  .screen{position:relative;width:100%;height:100%;border-radius:36px;overflow:hidden;background:#000;}
+
+  /* home screen mock */
+  .home{position:absolute;inset:0;z-index:1;
+    background:radial-gradient(120% 90% at 50% 0%,#2c3a4f 0%,#243246 38%,#1c2535 70%,#161d2a 100%);
+    display:flex;flex-direction:column;}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:12px 22px 4px;font-size:12px;font-weight:600;color:#eef2f7;}
+  .statusbar .r{display:flex;gap:6px;align-items:center;opacity:.9;font-size:11px;}
+  .iconwrap{flex:1;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:84px;gap:14px 16px;padding:26px 22px 0;align-content:start;}
+  .appicon{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .appicon .tile{width:56px;height:56px;border-radius:14px;box-shadow:0 6px 14px -6px rgba(0,0,0,.5);}
+  .appicon .nm{font-size:10px;color:#eef2f7e0;text-shadow:0 1px 2px rgba(0,0,0,.4);}
+  .tile.a{background:linear-gradient(160deg,#e0c3a0,#b88c63);}
+  .tile.b{background:linear-gradient(160deg,#9fb4c9,#6d86a3);}
+  .tile.c{background:linear-gradient(160deg,#c8a0a8,#9b6f78);}
+  .tile.d{background:linear-gradient(160deg,#a6c2a8,#71916f);}
+  .tile.e{background:linear-gradient(160deg,#cabf95,#9a8f62);}
+  .tile.f{background:linear-gradient(160deg,#b0a6c4,#7c6f9c);}
+  .tile.g{background:linear-gradient(160deg,#9fc1c4,#6f9799);}
+  /* the Plume icon — cream tile with a thin ink ring mark */
+  .tile.plume{background:radial-gradient(120% 120% at 50% 36%,#f6f0e0,#ece2cc);position:relative;cursor:pointer;
+    box-shadow:0 8px 18px -6px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.04);}
+  .tile.plume::after{content:"";position:absolute;inset:0;margin:auto;width:30px;height:30px;border-radius:50%;
+    border:1.4px solid rgba(46,42,37,.42);}
+  .appicon.target .nm{color:#fff;font-weight:600;}
+  .dock{margin:10px 14px 16px;height:84px;border-radius:30px;background:rgba(255,255,255,.12);backdrop-filter:blur(14px);
+    display:flex;align-items:center;justify-content:space-around;padding:0 14px;}
+  .dock .tile{width:54px;height:54px;border-radius:14px;}
+  .taphint{position:absolute;left:50%;bottom:120px;transform:translateX(-50%);z-index:3;font-size:11px;letter-spacing:1.5px;
+    text-transform:uppercase;color:#fff;background:rgba(0,0,0,.34);padding:7px 13px;border-radius:999px;backdrop-filter:blur(6px);
+    animation:pulse 1.8s ease-in-out infinite;pointer-events:none;}
+  @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+
+  /* app window (the zooming app) */
+  .appwin{position:absolute;z-index:2;overflow:hidden;background:var(--paper);will-change:transform,left,top,width,height,border-radius;
+    display:none;}
+  .library{position:absolute;inset:0;padding:22px 20px 0;display:flex;flex-direction:column;color:var(--ink);transform-origin:50% 30%;}
+  .lib-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px;}
+  .lib-word{font-family:"Fraunces",serif;font-style:italic;font-weight:300;font-size:27px;letter-spacing:-.4px;}
+  .dots{display:flex;gap:3.5px;align-self:center;}
+  .dots i{width:4px;height:4px;border-radius:50%;background:var(--ink);display:block;}
+  .pills{display:flex;gap:7px;margin-bottom:15px;}
+  .pill{font-size:11px;letter-spacing:.4px;padding:7px 13px;border-radius:999px;border:1px solid rgba(var(--inkR),var(--inkG),var(--inkB),.22);}
+  .pill.act{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .hair{height:1px;background:rgba(var(--inkR),var(--inkG),var(--inkB),.13);margin:0 0 16px;}
+  .seclabel{font-family:"Fraunces",serif;font-style:italic;font-weight:400;font-size:15px;color:var(--muted);margin:0 0 9px;letter-spacing:.3px;}
+  .sec{margin-bottom:14px;}
+  .row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding-bottom:13px;margin-bottom:13px;border-bottom:1px solid rgba(var(--inkR),var(--inkG),var(--inkB),.12);}
+  .row .nm{font-family:"Fraunces",serif;font-weight:400;font-size:16px;line-height:1.1;}
+  .row .ds{font-family:"Manrope";font-weight:300;font-size:10.5px;color:var(--muted);margin-top:3px;}
+  .row .pt{font-family:"Fraunces",serif;font-weight:300;font-size:13px;white-space:nowrap;letter-spacing:.6px;}
+  [data-st]{will-change:transform,opacity;}
+
+  /* controls */
+  .panel{flex:1 1 360px;min-width:320px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);
+    border-radius:18px;padding:20px 20px 8px;}
+  .panel h2{font-family:"Fraunces",serif;font-weight:400;font-size:18px;margin:0 0 4px;color:#f1ead8;}
+  .panel .sub{font-size:12px;color:#9b9384;margin:0 0 16px;line-height:1.5;}
+  .btnrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;}
+  button.ui{font-size:12px;font-weight:500;letter-spacing:.3px;cursor:pointer;background:transparent;color:#d9d1c1;
+    border:1px solid rgba(255,255,255,.18);padding:8px 13px;border-radius:999px;transition:all .16s;}
+  button.ui:hover{border-color:rgba(255,255,255,.42);}
+  button.ui.on{background:#f1ead8;color:#221d18;border-color:#f1ead8;}
+  button.ui.solid{background:#b8533c;border-color:#b8533c;color:#fff;}
+  .ctl{margin-bottom:13px;}
+  .ctl label{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:#a89f8f;margin-bottom:5px;}
+  .ctl label b{color:#e9c79a;font-weight:600;font-family:ui-monospace,Menlo,monospace;text-transform:none;letter-spacing:0;}
+  .ctl input[type=range]{width:100%;accent-color:#b8533c;}
+  .toggles{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 16px;}
+  .seg{display:flex;gap:4px;}
+  .divlbl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#6f6759;margin:18px 0 9px;border-top:1px solid rgba(255,255,255,.07);padding-top:14px;}
+  .readout{margin-top:6px;background:#0e0b08;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 13px;font-family:ui-monospace,Menlo,monospace;font-size:11px;line-height:1.65;color:#c9bfa9;white-space:pre-wrap;}
+  .note{font-size:11.5px;color:#8b8273;line-height:1.55;margin-top:14px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stage">
+    <div class="titlebar">
+      <h1>Already-Alive — launch in depth</h1>
+      <p>Tap the cream Plume icon to launch. Watch the iOS zoom hand off into the staggered settle. Tune it at right; tap the screen mid-settle to interrupt.</p>
+    </div>
+    <div class="device"><div class="screen" id="screen">
+      <div class="home" id="home">
+        <div class="statusbar"><span>9:41</span><span class="r">􀙇 􀛨 􀋦</span></div>
+        <div class="iconwrap">
+          <div class="appicon"><div class="tile a"></div><div class="nm">Notes</div></div>
+          <div class="appicon target"><div class="tile plume" id="plumeIcon"></div><div class="nm">Plume</div></div>
+          <div class="appicon"><div class="tile b"></div><div class="nm">Calm</div></div>
+          <div class="appicon"><div class="tile c"></div><div class="nm">Health</div></div>
+          <div class="appicon"><div class="tile d"></div><div class="nm">Walk</div></div>
+          <div class="appicon"><div class="tile e"></div><div class="nm">Books</div></div>
+          <div class="appicon"><div class="tile f"></div><div class="nm">Music</div></div>
+          <div class="appicon"><div class="tile g"></div><div class="nm">Clock</div></div>
+        </div>
+        <div class="dock"><div class="tile b"></div><div class="tile c"></div><div class="tile d"></div><div class="tile e"></div></div>
+        <div class="taphint">tap Plume to launch</div>
+      </div>
+      <div class="appwin" id="appwin"><div class="library" id="library"></div></div>
+    </div></div>
+  </div>
+
+  <div class="panel">
+    <h2>Launch choreography</h2>
+    <p class="sub">Continue the system icon-zoom, then settle the Library in staggered sections on the breath wave.</p>
+    <div class="btnrow">
+      <button class="ui solid" id="fresh">▶ Fresh launch</button>
+      <button class="ui" id="repeat">↻ Repeat launch</button>
+      <button class="ui" id="reset">Reset to home</button>
+    </div>
+
+    <div class="divlbl">Zoom (system hand-off)</div>
+    <div class="toggles">
+      <button class="ui on" id="zoomT">Zoom: on</button>
+      <button class="ui" id="rm">Reduce Motion: off</button>
+      <button class="ui on" id="loopT">Loop: on</button>
+      <span class="seg"><button class="ui on" data-speed="1">1×</button><button class="ui" data-speed="0.45">slow</button></span>
+    </div>
+    <div class="ctl"><label>Zoom duration <b id="vZoomMs">400ms</b></label><input type="range" id="zoomMs" min="220" max="620" step="10" value="400"></div>
+    <div class="ctl"><label>Content emerges before zoom ends <b id="vOverlap">35%</b></label><input type="range" id="overlap" min="0" max="70" step="5" value="35"></div>
+
+    <div class="divlbl">Staggered settle</div>
+    <div class="ctl"><label>Per-element delay <b id="vStagger">62ms</b></label><input type="range" id="stagger" min="0" max="130" step="2" value="62"></div>
+    <div class="ctl"><label>Settle duration (each) <b id="vSettle">560ms</b></label><input type="range" id="settle" min="300" max="820" step="10" value="560"></div>
+    <div class="ctl"><label>Rise distance <b id="vRise">7px</b></label><input type="range" id="rise" min="0" max="20" step="1" value="7"></div>
+    <div class="ctl"><label>Rise taper (top moves less) <b id="vTaper">60%</b></label><input type="range" id="taper" min="0" max="100" step="5" value="60"></div>
+    <div class="toggles">
+      <button class="ui on" id="headerLeads">Header leads</button>
+      <button class="ui on" id="rowsIndiv">Rows stagger individually</button>
+    </div>
+
+    <div class="divlbl">Scheme</div>
+    <div class="toggles">
+      <button class="ui on" data-scheme="newsprint">Newsprint</button>
+      <button class="ui" data-scheme="sage">Sage</button>
+      <button class="ui" data-scheme="evening">Evening</button>
+    </div>
+
+    <div class="divlbl">Current values</div>
+    <div class="readout" id="readout"></div>
+    <p class="note">When a setting feels right, read the values above to me and I'll encode them as named timing constants in the SwiftUI launch (Storyboard-style stages), with the same Reduce-Motion and repeat-launch paths modeled here.</p>
+  </div>
+</div>
+
+<script>
+const SCHEMES={
+  newsprint:{paper:"#F1EAD8",ink:"#2E2A25",accent:"#B8533C",muted:"#6E6358",ink3:[46,42,37]},
+  sage:{paper:"#E7E6D2",ink:"#34423A",accent:"#A6762E",muted:"#586552",ink3:[52,66,58]},
+  evening:{paper:"#E7E0CC",ink:"#222D49",accent:"#9C6B27",muted:"#595E78",ink3:[34,45,73]},
+};
+let scheme=SCHEMES.newsprint;
+const P={ zoom:true, zoomMs:400, overlap:0.35, stagger:62, settle:560, rise:7, taper:0.60,
+  headerLeads:true, rowsIndiv:true, speed:1, reduceMotion:false, loop:true };
+
+const clamp01=t=>t<0?0:t>1?1:t;
+const bw=t=>0.5-0.5*Math.cos(Math.PI*clamp01(t));       // calm: raised-cosine, no velocity edges
+const lerp=(a,b,t)=>a+(b-a)*t;
+const easeOutZoom=t=>1-Math.pow(1-clamp01(t),2.4);       // decel, no overshoot
+
+function applyScheme(){const r=document.documentElement.style;
+  r.setProperty("--paper",scheme.paper);r.setProperty("--ink",scheme.ink);r.setProperty("--accent",scheme.accent);
+  r.setProperty("--muted",scheme.muted);r.setProperty("--inkR",scheme.ink3[0]);r.setProperty("--inkG",scheme.ink3[1]);r.setProperty("--inkB",scheme.ink3[2]);}
+
+// library content with staggerable elements in DOM/visual order
+function buildLibrary(){
+  const secs=[
+    {label:"Calm", rows:[["Coherence","Even, steady breathing to settle","5·5"],["Box Breath","Equal counts to steady focus","4·4·4·4"]]},
+    {label:"Inward", rows:[["Resonant","Slow waves near six a minute","5·5"],["Extended Exhale","A longer out-breath to downshift","4·6"]]},
+  ];
+  let h=`<div class="lib-head" data-st data-lead><div class="lib-word">Plume</div><div class="dots"><i></i><i></i><i></i></div></div>
+    <div class="pills" data-st><span class="pill act">All</span><span class="pill">Calm</span><span class="pill">Inward</span></div>
+    <div class="hair" data-st></div>`;
+  secs.forEach(s=>{ h+=`<div class="sec"><div class="seclabel" data-st>${s.label}</div>`;
+    s.rows.forEach(r=>{ h+=`<div class="row" data-st><div><div class="nm">${r[0]}</div><div class="ds">${r[1]}</div></div><div class="pt">${r[2]}</div></div>`; });
+    h+=`</div>`; });
+  return h;
+}
+
+const screen=document.getElementById("screen");
+const home=document.getElementById("home");
+const appwin=document.getElementById("appwin");
+const library=document.getElementById("library");
+const plumeIcon=document.getElementById("plumeIcon");
+library.innerHTML=buildLibrary();
+let els=[...library.querySelectorAll("[data-st]")];
+
+let raf=null, interrupted=false;
+
+function fullRect(){ return {l:0,t:0,w:screen.clientWidth,h:screen.clientHeight,r:36}; }
+function iconRect(){ const ir=plumeIcon.getBoundingClientRect(), sr=screen.getBoundingClientRect();
+  return {l:ir.left-sr.left,t:ir.top-sr.top,w:ir.width,h:ir.height,r:14}; }
+function setWin(rc){ appwin.style.left=rc.l+"px";appwin.style.top=rc.t+"px";appwin.style.width=rc.w+"px";appwin.style.height=rc.h+"px";appwin.style.borderRadius=rc.r+"px"; }
+
+function elDelays(){
+  // assign each element a stagger slot; header optionally leads (slot 0, smaller rise)
+  const n=els.length;
+  return els.map((el,i)=>{
+    const isHeader = el.hasAttribute("data-lead");
+    let slot = i;
+    if(!P.rowsIndiv){ // collapse rows onto their section label's slot
+      // recompute slots grouping rows with preceding seclabel
+    }
+    const delay = slot*P.stagger;
+    const minF = 1-P.taper;
+    let rise = P.rise*(minF+(1-minF)*(n>1?i/(n-1):1));
+    if(isHeader && P.headerLeads) rise*=0.45;
+    return {el, delay, rise, isHeader};
+  });
+}
+
+function applyEl(d, settleClock){
+  const localT = clamp01((settleClock - d.delay)/P.settle);
+  const v = bw(localT);
+  d.el.style.opacity=v;
+  d.el.style.transform=`translateY(${(1-v)*d.rise}px)`;
+}
+
+function restAll(){ els.forEach(e=>{e.style.opacity=1;e.style.transform="none";}); library.style.transform="none"; }
+
+function run(mode){
+  if(raf) cancelAnimationFrame(raf);
+  interrupted=false;
+  applyScheme();
+  const fresh = mode==="fresh";
+  // setup
+  home.style.transition="none";
+  if(fresh){ home.style.display="flex"; home.style.opacity=1; home.style.transform="none"; }
+  else { home.style.display="none"; }
+  appwin.style.display="block";
+
+  // reduce motion: skip everything, gentle whole-fade
+  if(P.reduceMotion){
+    home.style.display="none"; setWin(fullRect()); restAll();
+    library.style.opacity=0; library.style.transition="opacity .22s ease"; requestAnimationFrame(()=>library.style.opacity=1);
+    updateReadout(); return;
+  }
+  library.style.transition="none"; library.style.opacity=1;
+
+  const delays=elDelays();
+  els.forEach((e)=>{e.style.opacity=0;e.style.transform=`translateY(${P.rise}px)`;});
+
+  const zMs = (fresh && P.zoom) ? P.zoomMs/P.speed : 0;
+  const settleStart = zMs*(1-P.overlap);
+  const settleMs = P.settle/P.speed;
+  const sStagger = P.stagger/P.speed;
+  const lastDelay = (els.length-1)*sStagger;
+  const totalSettle = lastDelay + settleMs;
+  const start = performance.now();
+  const ir=iconRect(), fr=fullRect();
+  if(fresh && P.zoom) setWin(ir); else setWin(fr);
+
+  // store scaled delays for this run
+  const runDelays = delays.map((d,i)=>({...d, delay:i*sStagger}));
+
+  const step=(now)=>{
+    if(interrupted){ setWin(fr); restAll(); updateReadout(); return; }
+    const el=now-start;
+    // zoom
+    if(fresh && P.zoom && el<zMs){
+      const zt=easeOutZoom(el/zMs);
+      setWin({l:lerp(ir.l,fr.l,zt),t:lerp(ir.t,fr.t,zt),w:lerp(ir.w,fr.w,zt),h:lerp(ir.h,fr.h,zt),r:lerp(ir.r,fr.r,zt)});
+      home.style.opacity=1-clamp01(el/zMs*1.4);
+      home.style.transform=`scale(${lerp(1,1.08,zt)})`;
+    } else { setWin(fr); home.style.opacity=0; }
+
+    const settleClock=el-(fresh&&P.zoom?settleStart/P.speed:0);
+    if(settleClock>=0){
+      // container finishes the zoom's deceleration: 0.985 -> 1
+      const cs=lerp(0.985,1,bw(clamp01(settleClock/settleMs)));
+      library.style.transform=`scale(${cs})`;
+      runDelays.forEach(d=>{
+        const lt=clamp01((settleClock-d.delay)/settleMs);
+        const v=bw(lt);
+        d.el.style.opacity=v;
+        d.el.style.transform=`translateY(${(1-v)*d.rise}px)`;
+      });
+    }
+    const done = settleClock>totalSettle && (!fresh || !P.zoom || el>zMs);
+    if(!done){ raf=requestAnimationFrame(step); }
+    else { restAll(); if(P.loop && !P.reduceMotion) setTimeout(()=>{ if(P.loop) run("fresh"); }, 950); }
+  };
+  raf=requestAnimationFrame(step);
+  updateReadout();
+}
+
+function resetHome(){ if(raf)cancelAnimationFrame(raf); appwin.style.display="none"; home.style.display="flex"; home.style.opacity=1; home.style.transform="none"; }
+
+// interrupt on screen tap during a fresh/repeat run
+screen.addEventListener("click",(e)=>{ if(appwin.style.display==="block" && !e.target.closest(".tile.plume")) interrupted=true; });
+plumeIcon.addEventListener("click",()=>run("fresh"));
+
+function updateReadout(){
+  const r=document.getElementById("readout");
+  r.textContent =
+`mode        fresh = home → zoom → settle
+zoom        ${P.zoom? P.zoomMs+"ms":"off"}   overlap ${Math.round(P.overlap*100)}%
+stagger     ${P.stagger}ms / element
+settle      ${P.settle}ms each   (raised-cosine)
+rise        ${P.rise}px   taper ${Math.round(P.taper*100)}%
+header      ${P.headerLeads?"leads (½ rise)":"in cascade"}
+rows        ${P.rowsIndiv?"individual":"per-section"}
+sequence    header → pills → rule → [label → rows] ×2
+speed       ${P.speed}×   reduceMotion ${P.reduceMotion}   loop ${P.loop}`;
+}
+
+// ---- wire controls ----
+const maybeReplay=()=>{ run("fresh"); };  // show every change immediately, even if the loop is throttled
+const bind=(id,key,fmt,scale=1)=>{const inp=document.getElementById(id);const out=document.getElementById("v"+id.charAt(0).toUpperCase()+id.slice(1));
+  inp.addEventListener("input",()=>{P[key]=parseFloat(inp.value)*scale; if(out)out.textContent=fmt(parseFloat(inp.value)); updateReadout();});
+  inp.addEventListener("change",maybeReplay);};
+bind("zoomMs","zoomMs",v=>v+"ms");
+bind("overlap","overlap",v=>v+"%",0.01);
+bind("stagger","stagger",v=>v+"ms");
+bind("settle","settle",v=>v+"ms");
+bind("rise","rise",v=>v+"px");
+bind("taper","taper",v=>v+"%",0.01);
+
+document.getElementById("fresh").onclick=()=>run("fresh");
+document.getElementById("repeat").onclick=()=>{ // repeat launch: no home/zoom, quick subtle stagger
+  const sv={stagger:P.stagger,settle:P.settle,rise:P.rise,zoom:P.zoom};
+  P.stagger*=0.42; P.settle*=0.6; P.rise*=0.6; P.zoom=false;
+  run("repeat");
+  setTimeout(()=>{P.stagger=sv.stagger;P.settle=sv.settle;P.rise=sv.rise;P.zoom=sv.zoom;updateReadout();},20);
+};
+document.getElementById("reset").onclick=()=>{ P.loop=false; const lb=document.getElementById("loopT"); lb.classList.remove("on"); lb.textContent="Loop: off"; updateReadout(); resetHome(); };
+const toggle=(id,key,onTxt,offTxt)=>{const b=document.getElementById(id);b.onclick=()=>{P[key]=!P[key];b.classList.toggle("on",P[key]);b.textContent=(P[key]?onTxt:offTxt);updateReadout();maybeReplay();};};
+toggle("zoomT","zoom","Zoom: on","Zoom: off");
+toggle("rm","reduceMotion","Reduce Motion: on","Reduce Motion: off");
+toggle("headerLeads","headerLeads","Header leads","Header in cascade");
+toggle("rowsIndiv","rowsIndiv","Rows stagger individually","Rows per-section");
+// loop runs continuous fresh launches so slider drags are seen live without manual replay
+document.getElementById("loopT").onclick=function(){ P.loop=!P.loop; this.classList.toggle("on",P.loop); this.textContent="Loop: "+(P.loop?"on":"off"); updateReadout(); if(P.loop) run("fresh"); };
+document.querySelectorAll("[data-speed]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-speed]").forEach(x=>x.classList.remove("on"));b.classList.add("on");P.speed=parseFloat(b.dataset.speed);updateReadout();maybeReplay();});
+document.querySelectorAll("[data-scheme]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-scheme]").forEach(x=>x.classList.remove("on"));b.classList.add("on");scheme=SCHEMES[b.dataset.scheme];applyScheme();maybeReplay();});
+
+applyScheme(); updateReadout();
+// auto-demo once so the page isn't static on load
+setTimeout(()=>run("fresh"), 600);
+</script>
+</body>
+</html>

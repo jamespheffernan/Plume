@@ -12,46 +12,58 @@ struct SetupView: View {
   var body: some View {
     VStack(spacing: 0) {
       topBar
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 28)
         .padding(.top, 24)
 
-      Spacer(minLength: 30)
+      // The body stays a centred composition at normal text sizes (Spacers fill
+      // the screen), but scrolls once Dynamic Type grows it past one screen, so
+      // the title and Begin button never clip at accessibility sizes.
+      GeometryReader { geo in
+        ScrollView {
+          VStack(spacing: 0) {
+            Spacer(minLength: 30)
 
-      VStack(spacing: 0) {
-        Text(routine.name)
-          .font(BreatheFont.display(56, weight: .light, italic: true))
-          .foregroundStyle(scheme.ink)
-          .tracking(-1.1)
-          .lineLimit(1)
-          .minimumScaleFactor(0.55)
-          .padding(.bottom, 16)
+            VStack(spacing: 0) {
+              Text(routine.name)
+                .font(BreatheFont.display(56, weight: .light, italic: true))
+                .foregroundStyle(scheme.ink)
+                .tracking(-1.1)
+                .lineLimit(1)
+                .minimumScaleFactor(0.55)
+                .padding(.bottom, 16)
 
-        Text(routine.description)
-          .font(BreatheFont.display(16, weight: .regular))
-          .foregroundStyle(scheme.ink)
-          .multilineTextAlignment(.center)
-          .lineSpacing(4)
-          .frame(maxWidth: 286)
-          .padding(.bottom, 34)
+              Text(routine.description)
+                .font(BreatheFont.display(16, weight: .regular))
+                .foregroundStyle(scheme.ink)
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
+                .frame(maxWidth: 286)
+                .padding(.bottom, 34)
 
-        content
+              content
 
-        if let source = routine.source {
-          Text(source)
-            .font(BreatheFont.utility(11, weight: .light))
-            .foregroundStyle(scheme.muted)
-            .multilineTextAlignment(.center)
-            .lineSpacing(3)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: 300)
-            .padding(.top, 26)
+              if let source = routine.source {
+                Text(source)
+                  .font(BreatheFont.utility(11, weight: .light))
+                  .foregroundStyle(scheme.muted)
+                  .multilineTextAlignment(.center)
+                  .lineSpacing(3)
+                  .fixedSize(horizontal: false, vertical: true)
+                  .frame(maxWidth: 300)
+                  .padding(.top, 26)
+              }
+            }
+            .padding(.horizontal, 28)
+
+            Spacer(minLength: 24)
+
+            footer
+          }
+          .frame(minHeight: geo.size.height)
         }
+        .scrollIndicators(.hidden)
+        .scrollBounceBehavior(.basedOnSize)
       }
-      .padding(.horizontal, 28)
-
-      Spacer(minLength: 24)
-
-      footer
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(scheme.paper)
@@ -86,9 +98,7 @@ struct SetupView: View {
 
   @ViewBuilder
   private var content: some View {
-    if routine.mode == .assessment {
-      assessmentBlock
-    } else if routine.isProgram {
+    if routine.isProgram {
       programBlock
     } else if routine.isTimed {
       patternBlock
@@ -106,49 +116,55 @@ struct SetupView: View {
     }
   }
 
+  /// Each numeral sits in the same Grid column as its label, so the two always
+  /// share a center by construction; the separator dots live in their own
+  /// (label-less) columns between them.
   private var detailedPatternBlock: some View {
-    VStack(spacing: 11) {
-      HStack(alignment: .firstTextBaseline, spacing: 18) {
+    Grid(horizontalSpacing: 14, verticalSpacing: 11) {
+      GridRow(alignment: .center) {
         ForEach(Array(routine.phases.enumerated()), id: \.offset) { index, phase in
           if index > 0 {
             Text("·")
               .font(BreatheFont.display(28, weight: .light))
               .foregroundStyle(scheme.muted)
-              .baselineOffset(8)
           }
           Text(phase.displaySeconds)
             .font(BreatheFont.display(56, weight: .ultraLight))
             .foregroundStyle(scheme.ink)
             .monospacedDigit()
+            .lineLimit(1)
             .minimumScaleFactor(0.72)
         }
       }
-      .lineLimit(1)
 
-      HStack(spacing: 22) {
-        ForEach(Array(routine.phases.enumerated()), id: \.offset) { _, phase in
+      GridRow {
+        ForEach(Array(routine.phases.enumerated()), id: \.offset) { index, phase in
+          if index > 0 {
+            Color.clear.frame(width: 1, height: 0)
+          }
           Text(phase.label)
             .font(BreatheFont.utility(10, weight: .light))
             .foregroundStyle(scheme.muted)
             .tracking(2.7)
             .textCase(.uppercase)
-            .frame(minWidth: 52)
+            .lineLimit(1)
+            .minimumScaleFactor(0.65)
         }
       }
-      .lineLimit(1)
-      .minimumScaleFactor(0.65)
     }
   }
 
   private var compactPatternBlock: some View {
     VStack(spacing: 12) {
+      // One line that scales to fit, so the " · " separators never wrap and
+      // strand a dot at the start of a line.
       Text(routine.patternText)
-        .font(BreatheFont.display(34, weight: .light))
+        .font(BreatheFont.display(30, weight: .light))
         .foregroundStyle(scheme.ink)
         .monospacedDigit()
         .multilineTextAlignment(.center)
-        .lineLimit(3)
-        .minimumScaleFactor(0.58)
+        .lineLimit(1)
+        .minimumScaleFactor(0.5)
 
       Text("Sequence")
         .font(BreatheFont.utility(10, weight: .light))
@@ -172,6 +188,7 @@ struct SetupView: View {
             .font(BreatheFont.display(14, weight: .light))
             .foregroundStyle(scheme.muted)
             .monospacedDigit()
+            .frame(minWidth: 86, alignment: .trailing)
 
           Text(stage.duration.clockText)
             .font(BreatheFont.utility(11, weight: .regular))
@@ -186,29 +203,6 @@ struct SetupView: View {
             .frame(height: 1)
         }
       }
-    }
-  }
-
-  private var assessmentBlock: some View {
-    VStack(alignment: .leading, spacing: 16) {
-      assessmentStep("1", "Breathe normally, then exhale gently.")
-      assessmentStep("2", "Hold, and start the timer.")
-      assessmentStep("3", "Stop at the first clear urge to breathe.")
-    }
-    .frame(maxWidth: 300)
-  }
-
-  private func assessmentStep(_ number: String, _ text: String) -> some View {
-    HStack(alignment: .top, spacing: 14) {
-      Text(number)
-        .font(BreatheFont.display(20, weight: .light, italic: true))
-        .foregroundStyle(scheme.accent)
-        .frame(width: 20, alignment: .leading)
-      Text(text)
-        .font(BreatheFont.utility(14, weight: .regular))
-        .foregroundStyle(scheme.ink)
-        .lineSpacing(4)
-        .fixedSize(horizontal: false, vertical: true)
     }
   }
 
@@ -234,15 +228,13 @@ struct SetupView: View {
 
   @ViewBuilder
   private var footer: some View {
-    if routine.mode == .assessment {
-      assessmentFooter
-    } else if routine.isProgram {
+    if routine.isProgram {
       programFooter
     } else if routine.isTimed {
       timedFooter
     } else {
       descriptionOnlyFooter
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 28)
         .padding(.bottom, 30)
     }
   }
@@ -250,7 +242,7 @@ struct SetupView: View {
   private var timedFooter: some View {
     VStack(spacing: 0) {
       durationPicker
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 28)
         .padding(.bottom, 24)
 
       if let note = routine.safetyNote, !routine.requiresAcknowledgement {
@@ -258,7 +250,7 @@ struct SetupView: View {
       }
 
       beginButton("Begin")
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 28)
         .padding(.bottom, 30)
     }
   }
@@ -273,19 +265,7 @@ struct SetupView: View {
         .padding(.bottom, 20)
 
       beginButton("Begin")
-        .padding(.horizontal, 24)
-        .padding(.bottom, 30)
-    }
-  }
-
-  private var assessmentFooter: some View {
-    VStack(spacing: 0) {
-      if let note = routine.safetyNote {
-        safetyNoteBlock(note)
-      }
-
-      beginButton("Begin measurement")
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 28)
         .padding(.bottom, 30)
     }
   }
@@ -303,16 +283,16 @@ struct SetupView: View {
           Button {
             selectedDuration = option
           } label: {
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
               Text(option.label)
                 .font(BreatheFont.display(18, weight: selectedDuration == option ? .regular : .light))
               if let unit = option.unit {
                 Text(unit)
                   .font(BreatheFont.utility(10, weight: .regular))
-                  .tracking(0.8)
-                  .textCase(.uppercase)
+                  .tracking(0.5)
               }
             }
+            .lineLimit(1)
             .foregroundStyle(selectedDuration == option ? scheme.ink : scheme.muted)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
@@ -324,8 +304,12 @@ struct SetupView: View {
           }
           .buttonStyle(.plain)
           .accessibilityLabel(option.seconds == nil ? "Infinite" : "\(option.label) minutes")
+          .accessibilityAddTraits(selectedDuration == option ? .isSelected : [])
         }
       }
+      // Six fixed options in one row can't widen, so cap their growth; the
+      // surrounding labels and copy still scale freely.
+      .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
 
       if let alignmentText = routine.alignmentText(for: selectedDuration) {
         Text(alignmentText)
@@ -384,7 +368,7 @@ struct SetupView: View {
       .lineSpacing(3)
       .fixedSize(horizontal: false, vertical: true)
       .frame(maxWidth: 300)
-      .padding(.horizontal, 24)
+      .padding(.horizontal, 28)
       .padding(.bottom, 22)
   }
 

@@ -5,8 +5,15 @@ struct LibraryView: View {
   let selectedRoutine: Routine
   let onSelectRoutine: (Routine) -> Void
   let onSettings: () -> Void
+  /// True only for the cold-launch appearance of the Library, so the staggered
+  /// entrance plays once per app launch and not when returning from Setup or
+  /// Settings. The root flips its flag via `onEntrancePlayed`.
+  var animateEntrance: Bool = false
+  var onEntrancePlayed: () -> Void = {}
 
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var selectedCategory: String?
+  @State private var entranceShown = false
 
   private var categories: [String] {
     Routine.grouped.map(\.category)
@@ -24,23 +31,33 @@ struct LibraryView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
-      header
-        .padding(.horizontal, 28)
-        .padding(.top, 24)
-        .padding(.bottom, 18)
+      reveal(0) {
+        header
+          .padding(.horizontal, 28)
+          .padding(.top, 24)
+          .padding(.bottom, 18)
+      }
 
-      pillRow
-        .padding(.bottom, 18)
+      reveal(1) {
+        pillRow
+          .padding(.bottom, 18)
+      }
 
-      Rectangle()
-        .fill(scheme.hairline)
-        .frame(height: 1)
-        .padding(.horizontal, 28)
+      reveal(2) {
+        Rectangle()
+          .fill(scheme.hairline)
+          .frame(height: 1)
+          .padding(.horizontal, 28)
+      }
 
       ScrollView {
         VStack(alignment: .leading, spacing: 28) {
-          ForEach(groups, id: \.category) { group in
-            categorySection(group, showLabel: selectedCategory == nil)
+          ForEach(Array(groups.enumerated()), id: \.element.category) { offset, group in
+            categorySection(
+              group,
+              showLabel: selectedCategory == nil,
+              baseIndex: entranceBaseIndex(forGroupOffset: offset)
+            )
           }
         }
         .padding(.horizontal, 28)
@@ -50,8 +67,60 @@ struct LibraryView: View {
       .scrollIndicators(.hidden)
     }
     .background(scheme.paper)
+    // Continue the system icon-zoom's deceleration: the whole layout finishes
+    // the last sliver of the zoom (0.985 → 1) on the breath wave as it settles.
+    .scaleEffect(entranceScale, anchor: .top)
+    .animation(launchAnimates ? LaunchEntrance.curve : nil, value: entranceShown)
     .animation(.easeInOut(duration: 0.4), value: scheme.id)
     .animation(.easeInOut(duration: 0.28), value: selectedCategory)
+    .onAppear(perform: playEntrance)
+  }
+
+  // MARK: Launch entrance
+
+  /// Whether this appearance should run the staggered settle (cold launch, motion on).
+  private var launchAnimates: Bool { animateEntrance && !reduceMotion }
+
+  private var entranceScale: CGFloat {
+    guard launchAnimates else { return 1 }
+    return entranceShown ? 1 : LaunchEntrance.containerScaleFrom
+  }
+
+  /// Total number of staggerable elements at launch (header, pills, rule, then
+  /// each section's label + its rows), used to taper the rise down the page.
+  private var entranceItemCount: Int {
+    3 + Routine.grouped.reduce(0) { $0 + 1 + $1.routines.count }
+  }
+
+  /// Stagger slot of a section's label; rows follow at `+1 + rowOffset`.
+  private func entranceBaseIndex(forGroupOffset offset: Int) -> Int {
+    3 + Routine.grouped.prefix(offset).reduce(0) { $0 + 1 + $1.routines.count }
+  }
+
+  /// Wraps a section so it rises and fades in on its own delayed breath wave.
+  /// When the entrance is not animating (return navigation, Reduce Motion) the
+  /// content renders untouched, so there is no hidden first frame.
+  @ViewBuilder
+  private func reveal<Content: View>(_ index: Int, @ViewBuilder _ content: () -> Content) -> some View {
+    if launchAnimates {
+      content().modifier(LaunchReveal(index: index, total: entranceItemCount, shown: entranceShown))
+    } else {
+      content()
+    }
+  }
+
+  private func playEntrance() {
+    guard !entranceShown else { return }
+    if launchAnimates {
+      entranceShown = true
+      onEntrancePlayed()
+    } else {
+      // Settle instantly with no animation, then report so the flag advances.
+      var settle = Transaction()
+      settle.disablesAnimations = true
+      withTransaction(settle) { entranceShown = true }
+      if animateEntrance { onEntrancePlayed() }
+    }
   }
 
   private var header: some View {
@@ -113,19 +182,24 @@ struct LibraryView: View {
 
   private func categorySection(
     _ group: (category: String, routines: [Routine]),
-    showLabel: Bool
+    showLabel: Bool,
+    baseIndex: Int
   ) -> some View {
     VStack(alignment: .leading, spacing: 9) {
       if showLabel {
-        Text(group.category)
-          .font(BreatheFont.display(14, weight: .regular, italic: true))
-          .foregroundStyle(scheme.muted)
-          .tracking(0.4)
+        reveal(baseIndex) {
+          Text(pillLabel(group.category))
+            .font(BreatheFont.display(14, weight: .regular, italic: true))
+            .foregroundStyle(scheme.muted)
+            .tracking(0.4)
+        }
       }
 
       VStack(spacing: 0) {
-        ForEach(group.routines) { routine in
-          routineRow(routine)
+        ForEach(Array(group.routines.enumerated()), id: \.element.id) { rowOffset, routine in
+          reveal(baseIndex + 1 + rowOffset) {
+            routineRow(routine)
+          }
         }
       }
     }
@@ -169,5 +243,39 @@ struct LibraryView: View {
         .frame(height: 1)
     }
     .accessibilityLabel("\(routine.name), \(routine.patternText)")
+  }
+}
+
+/// Tuning for the cold-launch settle. The "already-alive" launch has no splash:
+/// the Library is composed when the icon-zoom lands, then each section rises a
+/// few points and fades in on a staggered, raised-cosine breath wave — calm,
+/// no overshoot — so the app reads as awake rather than loading. Values dialed
+/// in the `docs/plume-launch-already-alive.html` prototype.
+private enum LaunchEntrance {
+  static let stagger: Double = 0.062        // delay between successive elements
+  static let settle: Double = 0.56          // each element's settle duration
+  static let rise: CGFloat = 7              // travel distance, before taper
+  static let riseTaper: Double = 0.6        // top elements rise less than lower ones
+  static let headerRiseFactor: CGFloat = 0.45  // the masthead barely moves — it anchors the zoom
+  static let containerScaleFrom: CGFloat = 0.985  // finishes the zoom's deceleration
+
+  /// Symmetric ease approximating the orb's raised-cosine wave (no velocity edges).
+  static var curve: Animation { .timingCurve(0.37, 0, 0.63, 1, duration: settle) }
+}
+
+private struct LaunchReveal: ViewModifier {
+  let index: Int
+  let total: Int
+  let shown: Bool
+
+  func body(content: Content) -> some View {
+    let span = Double(max(total - 1, 1))
+    let minFactor = 1 - LaunchEntrance.riseTaper
+    var rise = LaunchEntrance.rise * CGFloat(minFactor + (1 - minFactor) * Double(index) / span)
+    if index == 0 { rise *= LaunchEntrance.headerRiseFactor }
+    return content
+      .opacity(shown ? 1 : 0)
+      .offset(y: shown ? 0 : rise)
+      .animation(LaunchEntrance.curve.delay(Double(index) * LaunchEntrance.stagger), value: shown)
   }
 }

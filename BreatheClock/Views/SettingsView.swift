@@ -9,8 +9,6 @@ struct SettingsView: View {
   @Binding var swellHapticsEnabled: Bool
   let onBack: () -> Void
 
-  @AppStorage("lastBoltScore") private var lastBoltScore = 0
-
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 0) {
@@ -26,27 +24,9 @@ struct SettingsView: View {
 
         settingsSection(title: "Scheme") {
           HStack(spacing: 0) {
-            ForEach(BreatheScheme.allCases) { option in
-              Button {
-                schemeSelection = option
-                updateAppIcon(for: option)
-              } label: {
-                Circle()
-                  .fill(option.ink)
-                  .frame(width: 34, height: 34)
-                  .overlay {
-                    Circle()
-                      .stroke(option == schemeSelection ? scheme.paper : Color.clear, lineWidth: 2)
-                  }
-                  .overlay {
-                    Circle()
-                      .stroke(option == schemeSelection ? scheme.ink : Color.clear, lineWidth: 1)
-                      .padding(-4)
-                  }
-                  .frame(maxWidth: .infinity)
-              }
-              .buttonStyle(.plain)
-              .accessibilityLabel(option.name)
+            ForEach(Array(BreatheScheme.allCases.enumerated()), id: \.element) { index, option in
+              if index > 0 { Spacer(minLength: 12) }
+              schemeSwatch(option)
             }
           }
         }
@@ -77,6 +57,7 @@ struct SettingsView: View {
               .tint(scheme.ink)
           }
           .padding(.vertical, 5)
+          .accessibilityElement(children: .combine)
 
           HStack(alignment: .center, spacing: 18) {
             VStack(alignment: .leading, spacing: 4) {
@@ -95,6 +76,7 @@ struct SettingsView: View {
               .tint(scheme.ink)
           }
           .padding(.vertical, 5)
+          .accessibilityElement(children: .combine)
         }
 
         settingsSection(title: "Safety", topPadding: 34) {
@@ -117,12 +99,6 @@ struct SettingsView: View {
                   .foregroundStyle(scheme.ink)
               }
             }
-          }
-        }
-
-        if lastBoltScore > 0 {
-          settingsSection(title: "Breath", topPadding: 34) {
-            aboutRow("Last BOLT score", value: "\(lastBoltScore)s")
           }
         }
 
@@ -186,7 +162,7 @@ struct SettingsView: View {
         AudioCuePlayer.shared.playBoxPreview(cue)
       }
     } label: {
-      HStack(alignment: .firstTextBaseline, spacing: 16) {
+      HStack(alignment: .center, spacing: 16) {
         VStack(alignment: .leading, spacing: 3) {
           Text(cue.title)
             .font(BreatheFont.display(17, weight: cue == audioCue ? .semibold : .regular))
@@ -205,7 +181,6 @@ struct SettingsView: View {
           Circle()
             .fill(scheme.ink)
             .frame(width: 8, height: 8)
-            .baselineOffset(4)
         }
       }
       .padding(.vertical, 14)
@@ -217,6 +192,8 @@ struct SettingsView: View {
         .fill(scheme.hairline)
         .frame(height: 1)
     }
+    .accessibilityElement(children: .combine)
+    .accessibilityAddTraits(cue == audioCue ? .isSelected : [])
   }
 
   private func aboutRow(_ title: String, value: String) -> some View {
@@ -235,6 +212,51 @@ struct SettingsView: View {
         .fill(scheme.hairline)
         .frame(height: 1)
     }
+  }
+
+  /// A true preview of the scheme — its warm paper, its ink, and a tick of its
+  /// accent — with the scheme's name beneath, so the choice is legible without
+  /// relying on telling three near-black dots apart.
+  private func schemeSwatch(_ option: BreatheScheme) -> some View {
+    let isSelected = option == schemeSelection
+    return Button {
+      schemeSelection = option
+      updateAppIcon(for: option)
+    } label: {
+      VStack(alignment: .leading, spacing: 10) {
+        ZStack {
+          Circle()
+            .fill(option.paper)
+            .frame(width: 40, height: 40)
+            .overlay(Circle().stroke(scheme.ink.opacity(0.18), lineWidth: 1))
+          Circle()
+            .fill(option.ink)
+            .frame(width: 21, height: 21)
+          Circle()
+            .fill(option.accent)
+            .frame(width: 8, height: 8)
+            .offset(x: 11, y: 10)
+        }
+        .frame(width: 44, height: 44)
+        .overlay {
+          if isSelected {
+            Circle()
+              .stroke(scheme.ink, lineWidth: 1.5)
+              .frame(width: 44, height: 44)
+          }
+        }
+        .contentShape(Rectangle())
+
+        Text(option.name)
+          .font(BreatheFont.utility(10, weight: isSelected ? .semibold : .medium))
+          .foregroundStyle(isSelected ? scheme.ink : scheme.muted)
+          .tracking(1.4)
+          .textCase(.uppercase)
+      }
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel(option.name)
+    .accessibilityAddTraits(isSelected ? .isSelected : [])
   }
 
   private func updateAppIcon(for scheme: BreatheScheme) {

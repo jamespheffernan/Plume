@@ -12,7 +12,6 @@
 		1DC33EDB7BD970D0A1F6DF97 /* BreathHaptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9003CF209CA48B48F60E6DCE /* BreathHaptics.swift */; };
 		292A3AA0075007B5D1CE7C64 /* SessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B850B4D657D5B4F0EBA1FC6D /* SessionView.swift */; };
 		32E408B820263FF6D6432775 /* AudioCuePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 599AC1DBD2684D5AE704A4B2 /* AudioCuePlayer.swift */; };
-		4DFC4AE306C2E59144C84586 /* AssessmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2500373E282F841EB2D6FD /* AssessmentView.swift */; };
 		503D81763F03BC89BBEBBCC1 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE93A22BBEDFA9AE005E8E0C /* LibraryView.swift */; };
 		AA02545D9FEE5A5E38706C1A /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF49433358E9D83E66B070AA /* Theme.swift */; };
 		ABD3F17804DE3632A489902A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61D3C46491DEB9065E0F9900 /* SettingsView.swift */; };
@@ -33,7 +32,6 @@
 		9AB37F983CB245C70E5CC10C /* BreatheClockApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreatheClockApp.swift; sourceTree = "<group>"; };
 		9F8BBD911E43011201EB9FF8 /* Plume.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Plume.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A9984281014C849260347145 /* BreatheClockRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreatheClockRootView.swift; sourceTree = "<group>"; };
-		AA2500373E282F841EB2D6FD /* AssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssessmentView.swift; sourceTree = "<group>"; };
 		B2CA4F4A6D88DA482553B38E /* Manrope-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-Variable.ttf"; sourceTree = "<group>"; };
 		B850B4D657D5B4F0EBA1FC6D /* SessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionView.swift; sourceTree = "<group>"; };
 		CAE95B9C522D24470777785B /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
@@ -45,7 +43,6 @@
 		08CC852300FE001CDCFFF185 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				AA2500373E282F841EB2D6FD /* AssessmentView.swift */,
 				DE93A22BBEDFA9AE005E8E0C /* LibraryView.swift */,
 				B850B4D657D5B4F0EBA1FC6D /* SessionView.swift */,
 				61D3C46491DEB9065E0F9900 /* SettingsView.swift */,
@@ -199,7 +196,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4DFC4AE306C2E59144C84586 /* AssessmentView.swift in Sources */,
 				32E408B820263FF6D6432775 /* AudioCuePlayer.swift in Sources */,
 				1DC33EDB7BD970D0A1F6DF97 /* BreathHaptics.swift in Sources */,
 				BF0FDF8969F50D867A16F679 /* BreatheClockApp.swift in Sources */,

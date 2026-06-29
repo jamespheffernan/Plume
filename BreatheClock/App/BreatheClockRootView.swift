@@ -13,6 +13,11 @@ struct BreatheClockRootView: View {
   @State private var selectedRoutine = Routine.coherence
   @State private var sessionRoutine = Routine.coherence
   @State private var showSafety = false
+  // The staggered launch settle plays once, on the first cold-launch appearance
+  // of the Library — not when returning from Setup/Settings, and never for the
+  // direct-route test hooks (so scripted screenshots stay stable).
+  @State private var hasPlayedLaunchEntrance = false
+  @State private var suppressLaunchEntrance = false
 
   var body: some View {
     ZStack {
@@ -28,7 +33,9 @@ struct BreatheClockRootView: View {
             lastRoutineID = routine.id
             navigate(to: .setup)
           },
-          onSettings: { navigate(to: .settings) }
+          onSettings: { navigate(to: .settings) },
+          animateEntrance: !hasPlayedLaunchEntrance && !suppressLaunchEntrance,
+          onEntrancePlayed: { hasPlayedLaunchEntrance = true }
         )
         .transition(.opacity)
 
@@ -40,7 +47,7 @@ struct BreatheClockRootView: View {
           onBack: { navigate(to: .library) },
           onBegin: { resolved in
             sessionRoutine = resolved
-            navigate(to: resolved.mode == .assessment ? .assessment : .session)
+            navigate(to: .session)
           }
         )
         .transition(.opacity)
@@ -54,14 +61,6 @@ struct BreatheClockRootView: View {
           hapticsEnabled: hapticsEnabled,
           swellHapticsEnabled: swellHapticsEnabled,
           onEnd: { navigate(to: .setup) }
-        )
-        .transition(.opacity)
-
-      case .assessment:
-        AssessmentView(
-          scheme: activeScheme,
-          routine: sessionRoutine,
-          onBack: { navigate(to: .setup) }
         )
         .transition(.opacity)
 
@@ -89,7 +88,20 @@ struct BreatheClockRootView: View {
       sessionRoutine = selectedRoutine
       route = .library
       showSafety = !didAcknowledgeSafety
+      // Testing hook: jump straight to a screen so each route can be verified
+      // (e.g. Dynamic Type screenshots) without scripted taps.
+      if let routeName = ProcessInfo.processInfo.environment["BC_DIRECT_ROUTE"] {
+        suppressLaunchEntrance = true
+        showSafety = false
+        switch routeName {
+        case "setup": route = .setup
+        case "session": route = .session
+        case "settings": route = .settings
+        default: route = .library
+        }
+      }
       if let direct = ProcessInfo.processInfo.environment["BC_DIRECT_SESSION"] {
+        suppressLaunchEntrance = true
         selectedRoutine = Routine.byID(direct) ?? .coherence
         sessionRoutine = selectedRoutine
         showSafety = false
@@ -138,7 +150,6 @@ private enum AppRoute {
   case library
   case setup
   case session
-  case assessment
   case settings
 }
 
@@ -147,43 +158,52 @@ private struct SafetyOnboardingView: View {
   let onAcknowledge: () -> Void
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 0) {
-      Spacer(minLength: 40)
+    // Centred at normal text sizes; scrolls once the disclaimer grows past one
+    // screen so the acknowledge button is always reachable at large sizes.
+    GeometryReader { geo in
+      ScrollView {
+        VStack(alignment: .leading, spacing: 0) {
+          Spacer(minLength: 40)
 
-      Text("Plume")
-        .font(BreatheFont.display(40, weight: .light, italic: true))
-        .foregroundStyle(scheme.ink)
+          Text("Plume")
+            .font(BreatheFont.display(40, weight: .light, italic: true))
+            .foregroundStyle(scheme.ink)
 
-      Text("A note on safety")
-        .font(BreatheFont.utility(11, weight: .medium))
-        .foregroundStyle(scheme.muted)
-        .tracking(3)
-        .textCase(.uppercase)
-        .padding(.top, 10)
-        .padding(.bottom, 26)
+          Text("A note on safety")
+            .font(BreatheFont.utility(11, weight: .medium))
+            .foregroundStyle(scheme.muted)
+            .tracking(3)
+            .textCase(.uppercase)
+            .padding(.top, 10)
+            .padding(.bottom, 26)
 
-      Text(BreatheSafety.disclaimer)
-        .font(BreatheFont.utility(15, weight: .regular))
-        .foregroundStyle(scheme.ink)
-        .lineSpacing(5)
-        .fixedSize(horizontal: false, vertical: true)
+          Text(BreatheSafety.disclaimer)
+            .font(BreatheFont.utility(15, weight: .regular))
+            .foregroundStyle(scheme.ink)
+            .lineSpacing(5)
+            .fixedSize(horizontal: false, vertical: true)
 
-      Spacer(minLength: 24)
+          Spacer(minLength: 24)
 
-      Button(action: onAcknowledge) {
-        Text("I understand")
-          .font(BreatheFont.display(18, weight: .regular, italic: true))
-          .foregroundStyle(scheme.paper)
-          .frame(maxWidth: .infinity)
-          .frame(height: 62)
-          .background(Capsule().fill(scheme.ink))
+          Button(action: onAcknowledge) {
+            Text("I understand")
+              .font(BreatheFont.display(18, weight: .regular, italic: true))
+              .foregroundStyle(scheme.paper)
+              .frame(maxWidth: .infinity)
+              .frame(height: 62)
+              .background(Capsule().fill(scheme.ink))
+          }
+          .buttonStyle(.plain)
+          .padding(.top, 20)
+
+          Spacer(minLength: 24)
+        }
+        .padding(.horizontal, 30)
+        .frame(minHeight: geo.size.height)
       }
-      .buttonStyle(.plain)
-      .padding(.top, 20)
-
-      Spacer(minLength: 24)
+      .scrollIndicators(.hidden)
+      .scrollBounceBehavior(.basedOnSize)
     }
-    .padding(.horizontal, 30)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(scheme.paper.ignoresSafeArea())
   }

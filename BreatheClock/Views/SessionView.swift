@@ -21,6 +21,7 @@ struct SessionView: View {
   @State private var isComplete = false
   @State private var showPrimer = false
   @State private var startedContinuous = false
+  @State private var completionAppeared = false
 
   private let tick = Timer.publish(every: 0.08, on: .main, in: .common).autoconnect()
   private let introDuration: TimeInterval = 3
@@ -45,13 +46,17 @@ struct SessionView: View {
         sessionTimeline
       }
     }
+    // The breathing screen is a fixed full-height composition built around the
+    // orb (whose numeral is geometry-pinned). Text still scales for legibility,
+    // but is bounded so the top bar and the three-up control row stay on one
+    // line instead of truncating at the largest accessibility sizes.
+    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     .onAppear(perform: handleAppear)
     .onDisappear {
       AudioCuePlayer.shared.stopSustained()
       BreathHaptics.shared.stop()
     }
     .onReceive(tick, perform: handleTick)
-    .animation(.easeInOut(duration: 0.4), value: scheme.id)
   }
 
   private var sessionTimeline: some View {
@@ -68,9 +73,13 @@ struct SessionView: View {
             .padding(.horizontal, 28)
             .padding(.top, 22)
 
-          progressBar(elapsed: cappedElapsed)
-            .padding(.horizontal, 28)
-            .padding(.top, 14)
+          // Only a fixed-length session has a meaningful endpoint; at ∞ a
+          // sweeping bar would imply a finish that never comes.
+          if sessionDurationLimit != nil {
+            progressBar(elapsed: cappedElapsed)
+              .padding(.horizontal, 28)
+              .padding(.top, 14)
+          }
 
           if introRemaining <= 0, let stageTitle = state.stageTitle {
             stageHeader(stageTitle)
@@ -91,6 +100,7 @@ struct SessionView: View {
             .padding(.bottom, 34)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityHidden(isComplete)
 
         if isComplete {
           completionOverlay
@@ -123,6 +133,11 @@ struct SessionView: View {
         .monospacedDigit()
         .lineLimit(1)
         .minimumScaleFactor(0.75)
+        .accessibilityLabel(
+          sessionDurationLimit == nil
+            ? "Elapsed \(elapsed.clockText)"
+            : "Elapsed \(elapsed.clockText) of \(sessionDurationText)"
+        )
     }
   }
 
@@ -182,8 +197,13 @@ struct SessionView: View {
         .opacity(fillOpacity)
     }
     .font(BreatheFont.display(size * 0.52, weight: .ultraLight))
+    // The numeral is sized off the orb's geometry, not the text size, so pin it
+    // to the default content category — letting it scale would overflow the disc.
+    .dynamicTypeSize(.large)
     .monospacedDigit()
-    .tracking(-4)
+    // Tracking trims trailing advance; on a lone glyph that just pulls it off
+    // centre, so only tighten multi-digit counts (long holds reach 2 digits).
+    .tracking(digit >= 10 ? -4 : 0)
     .scaleEffect(scale)
     .id(digit)
     .transition(.opacity.animation(.easeOut(duration: reduceMotion ? 0 : 0.22)))
@@ -192,9 +212,12 @@ struct SessionView: View {
   private func introStage(remaining: TimeInterval) -> some View {
     let digit = max(1, Int(ceil(remaining)))
     // Settle down to the inhale's starting size across the countdown, so the
-    // first breath flows out of the intro with no jump.
+    // first breath flows out of the intro with no jump. Eased with the same
+    // raised-cosine wave as the breath itself, so the settle has no linear
+    // velocity edges.
     let remainingFraction = min(max(remaining / introDuration, 0), 1)
-    let scale = reduceMotion ? 0.4 : orbRestScale + 0.08 * remainingFraction
+    let settle = 0.5 - 0.5 * cos(Double.pi * remainingFraction)
+    let scale = reduceMotion ? 0.4 : orbRestScale + 0.08 * settle
 
     return VStack(spacing: 28) {
       GeometryReader { geometry in
@@ -204,12 +227,15 @@ struct SessionView: View {
           breathOrb(
             size: size,
             scale: scale,
-            halo: reduceMotion ? 0.12 : 0.08 + 0.06 * remainingFraction,
+            halo: reduceMotion ? 0.12 : 0.08 + 0.06 * settle,
             fillOpacity: 1,
             digit: digit
           )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Get ready")
+        .accessibilityValue("\(digit)")
       }
       .frame(height: 304)
 
@@ -219,8 +245,9 @@ struct SessionView: View {
         .tracking(5)
         .textCase(.uppercase)
         .frame(height: 16)
+        .accessibilityHidden(true)
     }
-    .padding(.horizontal, 24)
+    .padding(.horizontal, 28)
   }
 
   private func pupilStage(state: BreathState) -> some View {
@@ -249,6 +276,9 @@ struct SessionView: View {
           )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(state.phase.guidanceLabel)
+        .accessibilityValue("\(state.countdownDigit)")
       }
       .frame(height: 304)
 
@@ -260,8 +290,9 @@ struct SessionView: View {
         .id(state.phase.guidanceLabel)
         .transition(.opacity.animation(.easeInOut(duration: reduceMotion ? 0 : 0.18)))
         .frame(height: 16)
+        .accessibilityHidden(true)
     }
-    .padding(.horizontal, 24)
+    .padding(.horizontal, 28)
   }
 
   private func stageHeader(_ title: String) -> some View {
@@ -275,7 +306,7 @@ struct SessionView: View {
         .font(BreatheFont.display(21, weight: .regular, italic: true))
         .foregroundStyle(scheme.ink)
         .id(title)
-        .transition(.opacity.animation(.easeInOut(duration: 0.4)))
+        .transition(.opacity.animation(.easeInOut(duration: reduceMotion ? 0 : 0.4)))
     }
     .frame(maxWidth: .infinity)
   }
@@ -346,6 +377,8 @@ struct SessionView: View {
           Image(systemName: "checkmark")
             .font(.system(size: size * 0.26, weight: .ultraLight))
             .foregroundStyle(scheme.ink)
+            .scaleEffect(completionAppeared ? 1 : 0.82)
+            .opacity(completionAppeared ? 1 : 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
       }
@@ -384,6 +417,11 @@ struct SessionView: View {
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(scheme.paper)
+    .onAppear {
+      withAnimation(reduceMotion ? nil : .easeOut(duration: 0.45).delay(0.25)) {
+        completionAppeared = true
+      }
+    }
   }
 
   private func sessionProgress(elapsed: TimeInterval) -> Double {
@@ -484,7 +522,6 @@ struct SessionView: View {
     case .soft: return BreathHaptics.Feel(peakIntensity: 0.35, sharpness: 0.1)
     case .coherent: return BreathHaptics.Feel(peakIntensity: 0.3, sharpness: 0.1)
     case .crisp: return BreathHaptics.Feel(peakIntensity: 0.6, sharpness: 0.4)
-    case .silent: return nil
     }
   }
 
@@ -495,7 +532,6 @@ struct SessionView: View {
     case .soft: return (.soft, 0.5)
     case .coherent: return (.soft, 0.4)
     case .crisp: return (.rigid, 0.9)
-    case .silent: return nil
     }
   }
 
@@ -508,7 +544,9 @@ struct SessionView: View {
   }
 
   private func completeSession() {
-    isComplete = true
+    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.6)) {
+      isComplete = true
+    }
     BreathHaptics.shared.stop()
     if hapticsEnabled {
       UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -538,6 +576,7 @@ struct SessionView: View {
     lastIntroDigit = nil
     lastBoundaryKey = nil
     isComplete = false
+    completionAppeared = false
   }
 
   private func dismissPrimer() {
@@ -547,13 +586,14 @@ struct SessionView: View {
   }
 
   private func togglePause() {
+    let hasSustainedTone = isContinuousCue && startedContinuous
     if let pauseStarted {
       accumulatedPause += Date().timeIntervalSince(pauseStarted)
       self.pauseStarted = nil
-      AudioCuePlayer.shared.setSustainedPaused(false)
+      if hasSustainedTone { AudioCuePlayer.shared.setSustainedPaused(false) }
     } else {
       pauseStarted = Date()
-      AudioCuePlayer.shared.setSustainedPaused(true)
+      if hasSustainedTone { AudioCuePlayer.shared.setSustainedPaused(true) }
       BreathHaptics.shared.stop()
     }
   }
@@ -585,22 +625,24 @@ private struct BreathPrimerView: View {
 
   private var cycle: Double { steps.reduce(0) { $0 + $1.seconds } }
 
-  private func sample(at elapsed: Double) -> (scale: Double, label: String) {
+  private func sample(at elapsed: Double) -> (scale: Double, label: String, digit: Int) {
     let floorScale = 0.30
-    guard cycle > 0 else { return (floorScale, steps.first?.label ?? "") }
+    guard cycle > 0 else { return (floorScale, steps.first?.label ?? "", 1) }
     let position = elapsed.truncatingRemainder(dividingBy: cycle)
     var cursor = 0.0
     for (index, step) in steps.enumerated() {
       let end = cursor + step.seconds
       if position < end || index == steps.count - 1 {
-        let progress = min(max((position - cursor) / step.seconds, 0), 1)
+        let elapsedInStep = position - cursor
+        let progress = min(max(elapsedInStep / step.seconds, 0), 1)
         let eased = 0.5 - 0.5 * cos(Double.pi * progress)
         let value = step.from + (step.to - step.from) * eased
-        return (floorScale + (1 - floorScale) * value, step.label)
+        let digit = max(1, Int(ceil(step.seconds - elapsedInStep)))
+        return (floorScale + (1 - floorScale) * value, step.label, digit)
       }
       cursor = end
     }
-    return (floorScale, steps[0].label)
+    return (floorScale, steps[0].label, 1)
   }
 
   var body: some View {
@@ -642,6 +684,16 @@ private struct BreathPrimerView: View {
                 .fill(scheme.ink)
                 .frame(width: size, height: size)
                 .scaleEffect(scale)
+              // The count the copy promises, nested in the disc like the live orb
+              // (white on the dark disc, matching the session orb's numeral).
+              Text("\(result.digit)")
+                .font(BreatheFont.display(size * 0.2, weight: .ultraLight))
+                // Geometry-driven like the live orb numeral — pin to default size.
+                .dynamicTypeSize(.large)
+                .foregroundStyle(Color.white)
+                .monospacedDigit()
+                .id(result.digit)
+                .transition(.opacity.animation(.easeOut(duration: reduceMotion ? 0 : 0.22)))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
           }
