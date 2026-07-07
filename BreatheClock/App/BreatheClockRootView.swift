@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct BreatheClockRootView: View {
-  @AppStorage("scheme") private var schemeRawValue = BreatheScheme.charcoal.rawValue
+  @AppStorage("scheme") private var schemeRawValue = BreatheScheme.sepiaClay.rawValue
   @AppStorage("audio") private var audioRawValue = AudioCue.bowl.rawValue
   @AppStorage("haptics") private var hapticsEnabled = true
   @AppStorage("hapticsBreathSwell") private var swellHapticsEnabled = true
@@ -76,7 +76,8 @@ struct BreatheClockRootView: View {
         .transition(.opacity)
       }
     }
-    .preferredColorScheme(.light)
+    // Dark schemes (e.g. Indigo Vat) need the light status bar / system chrome.
+    .preferredColorScheme(activeScheme.inverted ? .dark : .light)
     .fullScreenCover(isPresented: $showSafety) {
       SafetyOnboardingView(scheme: activeScheme) {
         didAcknowledgeSafety = true
@@ -88,6 +89,13 @@ struct BreatheClockRootView: View {
       sessionRoutine = selectedRoutine
       route = .library
       showSafety = !didAcknowledgeSafety
+      // Testing hook: force a colour scheme so each palette can be screenshotted
+      // without tapping through Settings (env survives relaunch more reliably
+      // than a simctl `defaults write`).
+      if let schemeName = ProcessInfo.processInfo.environment["BC_SCHEME"],
+         let forced = BreatheScheme(rawValue: schemeName) {
+        schemeRawValue = forced.rawValue
+      }
       // Testing hook: jump straight to a screen so each route can be verified
       // (e.g. Dynamic Type screenshots) without scripted taps.
       if let routeName = ProcessInfo.processInfo.environment["BC_DIRECT_ROUTE"] {
@@ -111,7 +119,7 @@ struct BreatheClockRootView: View {
   }
 
   private var activeScheme: BreatheScheme {
-    BreatheScheme(rawValue: schemeRawValue) ?? .charcoal
+    BreatheScheme(rawValue: schemeRawValue) ?? .sepiaClay
   }
 
   private var activeAudioCue: AudioCue {

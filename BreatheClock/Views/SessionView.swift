@@ -163,7 +163,8 @@ struct SessionView: View {
   /// The breathing orb: a quiet vessel ring, a soft halo that swells, and a
   /// gradient sphere with the count nested inside it. At the bottom of an
   /// exhale the sphere dissolves (fillOpacity → 0) into the empty ring while the
-  /// numeral crossfades white → ink, so the count stays readable on paper.
+  /// numeral crossfades paper ⇄ ink, so the count stays readable whether the orb
+  /// is a dark disc on light paper or a light disc on a dark (inverted) scheme.
   @ViewBuilder
   private func breathOrb(size: CGFloat, scale: Double, halo: Double, fillOpacity: Double, digit: Int) -> some View {
     Circle()
@@ -194,7 +195,7 @@ struct SessionView: View {
       Text("\(digit)")
         .foregroundStyle(scheme.ink)
       Text("\(digit)")
-        .foregroundStyle(Color.white)
+        .foregroundStyle(scheme.paper)
         .opacity(fillOpacity)
     }
     .font(BreatheFont.display(size * 0.52, weight: .ultraLight))
@@ -686,12 +687,12 @@ private struct BreathPrimerView: View {
                 .frame(width: size, height: size)
                 .scaleEffect(scale)
               // The count the copy promises, nested in the disc like the live orb
-              // (white on the dark disc, matching the session orb's numeral).
+              // (paper on the ink disc, matching the session orb's numeral).
               Text("\(result.digit)")
                 .font(BreatheFont.display(size * 0.2, weight: .ultraLight))
                 // Geometry-driven like the live orb numeral — pin to default size.
                 .dynamicTypeSize(.large)
-                .foregroundStyle(Color.white)
+                .foregroundStyle(scheme.paper)
                 .monospacedDigit()
                 .id(result.digit)
                 .transition(.opacity.animation(.easeOut(duration: reduceMotion ? 0 : 0.22)))
