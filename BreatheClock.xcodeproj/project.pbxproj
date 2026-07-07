@@ -20,6 +20,7 @@
 		D4740B6B6852839CD819D3BC /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAE95B9C522D24470777785B /* SetupView.swift */; };
 		DAB6D8C1D3D03C4140EC8AB0 /* Fraunces-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 27708907028F0FD4BBF58FEB /* Fraunces-Variable.ttf */; };
 		FC893275DADA25D13DD481F4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9839F2161868D0FDE29F13E4 /* Assets.xcassets */; };
+		B27839BA169A42F6858E3D89 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 57F3E6D35173458E9787ECCE /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,6 +30,7 @@
 		61D3C46491DEB9065E0F9900 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		9003CF209CA48B48F60E6DCE /* BreathHaptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreathHaptics.swift; sourceTree = "<group>"; };
 		9839F2161868D0FDE29F13E4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		57F3E6D35173458E9787ECCE /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		9AB37F983CB245C70E5CC10C /* BreatheClockApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreatheClockApp.swift; sourceTree = "<group>"; };
 		9F8BBD911E43011201EB9FF8 /* Plume.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Plume.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A9984281014C849260347145 /* BreatheClockRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreatheClockRootView.swift; sourceTree = "<group>"; };
@@ -90,6 +92,7 @@
 			isa = PBXGroup;
 			children = (
 				9839F2161868D0FDE29F13E4 /* Assets.xcassets */,
+				57F3E6D35173458E9787ECCE /* PrivacyInfo.xcprivacy */,
 				64403CE13B974256D98A6094 /* Fonts */,
 			);
 			path = Resources;
@@ -184,6 +187,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FC893275DADA25D13DD481F4 /* Assets.xcassets in Resources */,
+				B27839BA169A42F6858E3D89 /* PrivacyInfo.xcprivacy in Resources */,
 				DAB6D8C1D3D03C4140EC8AB0 /* Fraunces-Variable.ttf in Resources */,
 				1B73849B265AEBCF752B51E8 /* Manrope-Variable.ttf in Resources */,
 			);
