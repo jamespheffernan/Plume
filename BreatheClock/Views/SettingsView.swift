@@ -23,10 +23,9 @@ struct SettingsView: View {
           .padding(.bottom, 42)
 
         settingsSection(title: "Scheme") {
-          HStack(spacing: 0) {
-            ForEach(Array(BreatheScheme.allCases.enumerated()), id: \.element) { index, option in
-              if index > 0 { Spacer(minLength: 12) }
-              schemeSwatch(option)
+          VStack(spacing: 0) {
+            ForEach(BreatheScheme.allCases) { option in
+              schemeRow(option)
             }
           }
         }
@@ -217,45 +216,60 @@ struct SettingsView: View {
   /// A true preview of the scheme — its warm paper, its ink, and a tick of its
   /// accent — with the scheme's name beneath, so the choice is legible without
   /// relying on telling three near-black dots apart.
-  private func schemeSwatch(_ option: BreatheScheme) -> some View {
+  /// One scheme per row, matching the Audio section's row language: a small
+  /// paper/ink/accent preview, the scheme name with its mood beneath, and a
+  /// selection dot. Reads and compares far more easily than the old row of
+  /// five cramped swatches with tiny uppercase captions.
+  private func schemeRow(_ option: BreatheScheme) -> some View {
     let isSelected = option == schemeSelection
     return Button {
       schemeSelection = option
       updateAppIcon(for: option)
     } label: {
-      VStack(alignment: .leading, spacing: 10) {
+      HStack(alignment: .center, spacing: 16) {
         ZStack {
           Circle()
             .fill(option.paper)
-            .frame(width: 40, height: 40)
+            .frame(width: 34, height: 34)
             .overlay(Circle().stroke(scheme.ink.opacity(0.18), lineWidth: 1))
           Circle()
             .fill(option.ink)
-            .frame(width: 21, height: 21)
+            .frame(width: 18, height: 18)
           Circle()
             .fill(option.accent)
-            .frame(width: 8, height: 8)
-            .offset(x: 11, y: 10)
+            .frame(width: 7, height: 7)
+            .offset(x: 9, y: 8)
         }
-        .frame(width: 44, height: 44)
-        .overlay {
-          if isSelected {
-            Circle()
-              .stroke(scheme.ink, lineWidth: 1.5)
-              .frame(width: 44, height: 44)
-          }
-        }
-        .contentShape(Rectangle())
+        .frame(width: 34, height: 34)
 
-        Text(option.name)
-          .font(BreatheFont.utility(10, weight: isSelected ? .semibold : .medium))
-          .foregroundStyle(isSelected ? scheme.ink : scheme.muted)
-          .tracking(1.4)
-          .textCase(.uppercase)
+        VStack(alignment: .leading, spacing: 3) {
+          Text(option.name)
+            .font(BreatheFont.display(17, weight: isSelected ? .semibold : .regular))
+            .foregroundStyle(scheme.ink)
+          Text(option.mood)
+            .font(BreatheFont.display(13, weight: .light, italic: true))
+            .foregroundStyle(scheme.muted)
+        }
+
+        Spacer()
+
+        if isSelected {
+          Circle()
+            .fill(scheme.ink)
+            .frame(width: 8, height: 8)
+        }
       }
+      .padding(.vertical, 12)
+      .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
-    .accessibilityLabel(option.name)
+    .overlay(alignment: .bottom) {
+      Rectangle()
+        .fill(scheme.hairline)
+        .frame(height: 1)
+    }
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel("\(option.name), \(option.mood)")
     .accessibilityAddTraits(isSelected ? .isSelected : [])
   }
 

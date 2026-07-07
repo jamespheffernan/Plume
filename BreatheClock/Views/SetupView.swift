@@ -67,10 +67,27 @@ struct SetupView: View {
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(scheme.paper)
+    .simultaneousGesture(edgeBackGesture)
     .animation(.easeInOut(duration: 0.4), value: scheme.id)
     .sheet(isPresented: $showingSafetyGate) {
       safetyGateView
     }
+  }
+
+  /// A left-edge swipe returns to the Library — the system back gesture the
+  /// custom (non-NavigationStack) flow would otherwise lack. Runs as a
+  /// simultaneous gesture scoped to the outer ~24pt so it never competes with
+  /// vertical scrolling or the horizontal duration picker, and fires the same
+  /// `onBack` as the top-bar chevron so tap and swipe stay in sync.
+  private var edgeBackGesture: some Gesture {
+    DragGesture(minimumDistance: 30)
+      .onEnded { value in
+        guard value.startLocation.x < 24,
+              value.translation.width > 70,
+              abs(value.translation.height) < 60
+        else { return }
+        onBack()
+      }
   }
 
   private var topBar: some View {

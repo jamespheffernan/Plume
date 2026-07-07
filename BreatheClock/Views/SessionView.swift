@@ -10,6 +10,7 @@ struct SessionView: View {
   let hapticsEnabled: Bool
   let swellHapticsEnabled: Bool
   let onEnd: () -> Void
+  let onSettings: () -> Void
 
   @AppStorage("didSeeBreathPrimer") private var didSeeBreathPrimer = false
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -117,7 +118,21 @@ struct SessionView: View {
   }
 
   private func topBar(elapsed: TimeInterval) -> some View {
-    HStack(alignment: .firstTextBaseline) {
+    HStack(alignment: .firstTextBaseline, spacing: 10) {
+      // A quiet gear so settings stay reachable mid-session; opens Settings as
+      // a sheet over the live breath, so dismissing returns straight here
+      // without ending the session.
+      Button(action: onSettings) {
+        Image(systemName: "gearshape")
+          .font(.system(size: 14, weight: .regular))
+          .foregroundStyle(scheme.muted)
+          .frame(height: 30)
+          .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .accessibilityLabel("Settings")
+      .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] }
+
       Text(routine.name)
         .font(BreatheFont.display(17, weight: .regular, italic: true))
         .foregroundStyle(scheme.ink)
