@@ -104,7 +104,7 @@ struct SettingsView: View {
 
         settingsSection(title: "About", topPadding: 34) {
           VStack(spacing: 0) {
-            aboutRow("Version", value: "1.0.0")
+            aboutRow("Version", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0")
             aboutRow("Made in", value: "Cambridge")
           }
         }
