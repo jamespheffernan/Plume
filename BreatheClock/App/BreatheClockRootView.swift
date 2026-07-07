@@ -18,6 +18,9 @@ struct BreatheClockRootView: View {
   // direct-route test hooks (so scripted screenshots stay stable).
   @State private var hasPlayedLaunchEntrance = false
   @State private var suppressLaunchEntrance = false
+  // Settings opens as a sheet over a running session (issue #3) so dismissing
+  // returns to the breathing screen without tearing the session down.
+  @State private var showSettingsSheet = false
 
   var body: some View {
     ZStack {
@@ -60,7 +63,8 @@ struct BreatheClockRootView: View {
           audioCue: activeAudioCue,
           hapticsEnabled: hapticsEnabled,
           swellHapticsEnabled: swellHapticsEnabled,
-          onEnd: { navigate(to: .setup) }
+          onEnd: { navigate(to: .setup) },
+          onSettings: { showSettingsSheet = true }
         )
         .transition(.opacity)
 
@@ -83,6 +87,19 @@ struct BreatheClockRootView: View {
         didAcknowledgeSafety = true
         showSafety = false
       }
+    }
+    // Settings reachable from the breathing screen (issue #3): presented over
+    // the live session so the breath keeps its place and returns on dismiss.
+    .sheet(isPresented: $showSettingsSheet) {
+      SettingsView(
+        scheme: activeScheme,
+        schemeSelection: schemeBinding,
+        audioCue: audioBinding,
+        hapticsEnabled: $hapticsEnabled,
+        swellHapticsEnabled: $swellHapticsEnabled,
+        onBack: { showSettingsSheet = false }
+      )
+      .preferredColorScheme(activeScheme.inverted ? .dark : .light)
     }
     .task {
       selectedRoutine = Routine.byID(lastRoutineID) ?? .coherence
