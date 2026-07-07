@@ -40,10 +40,17 @@ enum BreatheScheme: String, CaseIterable, Identifiable {
     self == .indigoVat
   }
 
+  /// Alternate app-icon name per scheme (nil = the primary AppIcon, Sepia & Clay).
+  /// Each is a recoloured plume mark from scripts/make_plume_icons.py; the names
+  /// must match the .appiconset folders and Info.plist CFBundleAlternateIcons.
   var appIconName: String? {
-    // No alternate-icon assets exist for these schemes yet; nil resets to the
-    // primary icon. (The old Sage/Indigo icon assets are now dormant.)
-    nil
+    switch self {
+    case .sepiaClay: return nil
+    case .cochineal: return "CochinealAppIcon"
+    case .celadon: return "CeladonAppIcon"
+    case .coldHarbor: return "ColdHarborAppIcon"
+    case .indigoVat: return "IndigoVatAppIcon"
+    }
   }
 
   var paper: Color {

@@ -10,23 +10,41 @@
 	<dict>
 		<key>CFBundleAlternateIcons</key>
 		<dict>
-			<key>IndigoAppIcon</key>
+			<key>CochinealAppIcon</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
 				<array>
-					<string>IndigoAppIcon</string>
+					<string>CochinealAppIcon</string>
 				</array>
 				<key>CFBundleIconName</key>
-				<string>IndigoAppIcon</string>
+				<string>CochinealAppIcon</string>
 			</dict>
-			<key>SageAppIcon</key>
+			<key>CeladonAppIcon</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
 				<array>
-					<string>SageAppIcon</string>
+					<string>CeladonAppIcon</string>
 				</array>
 				<key>CFBundleIconName</key>
-				<string>SageAppIcon</string>
+				<string>CeladonAppIcon</string>
+			</dict>
+			<key>ColdHarborAppIcon</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>ColdHarborAppIcon</string>
+				</array>
+				<key>CFBundleIconName</key>
+				<string>ColdHarborAppIcon</string>
+			</dict>
+			<key>IndigoVatAppIcon</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>IndigoVatAppIcon</string>
+				</array>
+				<key>CFBundleIconName</key>
+				<string>IndigoVatAppIcon</string>
 			</dict>
 		</dict>
 		<key>CFBundlePrimaryIcon</key>

@@ -11,14 +11,19 @@ SS = 4                      # supersample factor
 OUT = 1024
 W = OUT * SS                # working canvas
 
-# (paper, ink) per scheme — matches Theme.swift
+# (paper, ink) per scheme — matches Theme.swift. Feather is `ink` on `paper`;
+# for the dark Indigo Vat the ink is light, so the plume glows on a dark ground.
 SCHEMES = {
     "BreatheClock/Resources/Assets.xcassets/AppIcon.appiconset/BreatheClockIcon.png":
-        ((0xF1, 0xEA, 0xD8), (0x2E, 0x2A, 0x25)),   # Newsprint
-    "BreatheClock/Resources/Assets.xcassets/SageAppIcon.appiconset/SageAppIcon.png":
-        ((0xE7, 0xE6, 0xD2), (0x34, 0x42, 0x3A)),   # Sage
-    "BreatheClock/Resources/Assets.xcassets/IndigoAppIcon.appiconset/IndigoAppIcon.png":
-        ((0xE7, 0xE0, 0xCC), (0x22, 0x2D, 0x49)),   # Evening
+        ((0xF6, 0xEC, 0xD8), (0x36, 0x26, 0x1C)),   # Sepia & Clay (primary)
+    "BreatheClock/Resources/Assets.xcassets/CochinealAppIcon.appiconset/CochinealAppIcon.png":
+        ((0xFB, 0xE7, 0xE8), (0x39, 0x16, 0x19)),   # Cochineal Lake
+    "BreatheClock/Resources/Assets.xcassets/CeladonAppIcon.appiconset/CeladonAppIcon.png":
+        ((0xE4, 0xF0, 0xEA), (0x11, 0x28, 0x21)),   # Celadon Glaze
+    "BreatheClock/Resources/Assets.xcassets/ColdHarborAppIcon.appiconset/ColdHarborAppIcon.png":
+        ((0xE0, 0xEC, 0xF0), (0x1E, 0x35, 0x48)),   # Cold Harbor
+    "BreatheClock/Resources/Assets.xcassets/IndigoVatAppIcon.appiconset/IndigoVatAppIcon.png":
+        ((0x09, 0x16, 0x30), (0xE2, 0xEC, 0xF7)),   # Indigo Vat (dark — light feather)
 }
 
 # Shaft as a cubic Bézier, base (bottom) -> tip (top), gently curved.
