@@ -381,13 +381,13 @@ struct Routine: Identifiable, Hashable {
     Routine(
       id: "wim-hof",
       category: "Energize",
-      name: "Wim Hof",
+      name: "Power Breath",
       description: "Rounds of brisk, full breaths, then an exhale hold and a recovery breath. Intense — never in water, while driving, or standing.",
       phases: wimHofRoundPhases(),
       intensity: .intense,
       safetyNote: "Sit or lie down, and end early if you feel faint. Never in water, while driving, or standing.",
       patternOverride: "Breathe · Hold · Recover",
-      source: "The Wim Hof Method — cyclic hyperventilation followed by breath holds, developed by Wim Hof."
+      source: "Cyclic hyperventilation followed by breath holds, popularized by Wim Hof."
     ),
     Routine(
       id: "rebirthing",
