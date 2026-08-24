@@ -23,10 +23,9 @@ struct SettingsView: View {
           .padding(.bottom, 42)
 
         settingsSection(title: "Scheme") {
-          HStack(spacing: 0) {
-            ForEach(Array(BreatheScheme.allCases.enumerated()), id: \.element) { index, option in
-              if index > 0 { Spacer(minLength: 12) }
-              schemeSwatch(option)
+          VStack(spacing: 0) {
+            ForEach(BreatheScheme.allCases) { option in
+              schemeRow(option)
             }
           }
         }
@@ -214,49 +213,75 @@ struct SettingsView: View {
     }
   }
 
-  /// A true preview of the scheme — its warm paper, its ink, and a tick of its
-  /// accent — with the scheme's name beneath, so the choice is legible without
-  /// relying on telling three near-black dots apart.
-  private func schemeSwatch(_ option: BreatheScheme) -> some View {
+  /// One scheme per full-width row — a true colour preview (its paper, ink, and a
+  /// tick of accent) beside the scheme's name and mood, so each choice has room to
+  /// breathe and reads on its own rather than as one of five crowded dots. Shares
+  /// the Audio list's rhythm: leading preview, title + detail, trailing selected dot.
+  private func schemeRow(_ option: BreatheScheme) -> some View {
     let isSelected = option == schemeSelection
     return Button {
       schemeSelection = option
       updateAppIcon(for: option)
     } label: {
-      VStack(alignment: .leading, spacing: 10) {
-        ZStack {
-          Circle()
-            .fill(option.paper)
-            .frame(width: 40, height: 40)
-            .overlay(Circle().stroke(scheme.ink.opacity(0.18), lineWidth: 1))
-          Circle()
-            .fill(option.ink)
-            .frame(width: 21, height: 21)
-          Circle()
-            .fill(option.accent)
-            .frame(width: 8, height: 8)
-            .offset(x: 11, y: 10)
-        }
-        .frame(width: 44, height: 44)
-        .overlay {
-          if isSelected {
-            Circle()
-              .stroke(scheme.ink, lineWidth: 1.5)
-              .frame(width: 44, height: 44)
-          }
-        }
-        .contentShape(Rectangle())
+      HStack(alignment: .center, spacing: 16) {
+        schemeSwatch(option, isSelected: isSelected)
 
-        Text(option.name)
-          .font(BreatheFont.utility(10, weight: isSelected ? .semibold : .medium))
-          .foregroundStyle(isSelected ? scheme.ink : scheme.muted)
-          .tracking(1.4)
-          .textCase(.uppercase)
+        VStack(alignment: .leading, spacing: 3) {
+          Text(option.name)
+            .font(BreatheFont.display(17, weight: isSelected ? .semibold : .regular))
+            .foregroundStyle(scheme.ink)
+
+          Text(option.mood)
+            .font(BreatheFont.display(13, weight: .light, italic: true))
+            .foregroundStyle(scheme.muted)
+        }
+
+        Spacer()
+
+        if isSelected {
+          Circle()
+            .fill(scheme.ink)
+            .frame(width: 8, height: 8)
+        }
       }
+      .padding(.vertical, 12)
+      .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
+    .overlay(alignment: .bottom) {
+      Rectangle()
+        .fill(scheme.hairline)
+        .frame(height: 1)
+    }
+    .accessibilityElement(children: .combine)
     .accessibilityLabel(option.name)
     .accessibilityAddTraits(isSelected ? .isSelected : [])
+  }
+
+  /// The colour disc for a scheme row: its paper field, ink orb, and accent tick,
+  /// ringed in ink when selected so the chosen colour is unmistakable.
+  private func schemeSwatch(_ option: BreatheScheme, isSelected: Bool) -> some View {
+    ZStack {
+      Circle()
+        .fill(option.paper)
+        .frame(width: 40, height: 40)
+        .overlay(Circle().stroke(scheme.ink.opacity(0.18), lineWidth: 1))
+      Circle()
+        .fill(option.ink)
+        .frame(width: 21, height: 21)
+      Circle()
+        .fill(option.accent)
+        .frame(width: 8, height: 8)
+        .offset(x: 11, y: 10)
+    }
+    .frame(width: 44, height: 44)
+    .overlay {
+      if isSelected {
+        Circle()
+          .stroke(scheme.ink, lineWidth: 1.5)
+          .frame(width: 44, height: 44)
+      }
+    }
   }
 
   private func updateAppIcon(for scheme: BreatheScheme) {

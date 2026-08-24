@@ -84,6 +84,46 @@ struct Routine: Identifiable, Hashable {
     return phases.contains { $0.kind.isHold }
   }
 
+  var durationOptions: [SessionDuration] {
+    if id == "wim-hof" {
+      return SessionDuration.powerBreathOptions(roundDuration: cycleDuration)
+    }
+    return SessionDuration.options
+  }
+
+  var defaultDuration: SessionDuration {
+    durationOptions.first { $0.storedSeconds == 180 } ?? durationOptions[0]
+  }
+
+  var durationControlTitle: String {
+    id == "wim-hof" ? "Rounds" : "Duration"
+  }
+
+  var supportsBoxLengthControl: Bool {
+    id == "box"
+  }
+
+  func withBoxSideSeconds(_ seconds: Int) -> Routine {
+    guard supportsBoxLengthControl else { return self }
+    let side = TimeInterval(seconds)
+    return Routine(
+      id: id,
+      category: category,
+      name: name,
+      description: description,
+      phases: [
+        BreathPhase(kind: .inhale, seconds: side),
+        BreathPhase(kind: .holdFull, seconds: side),
+        BreathPhase(kind: .exhale, seconds: side),
+        BreathPhase(kind: .holdEmpty, seconds: side)
+      ],
+      intensity: intensity,
+      safetyNote: safetyNote,
+      program: program,
+      source: source
+    )
+  }
+
   func alignedSessionDuration(for duration: SessionDuration) -> TimeInterval? {
     if isProgram { return programTotalDuration }
     guard let targetSeconds = duration.seconds else { return nil }
@@ -309,27 +349,15 @@ struct Routine: Identifiable, Hashable {
       id: "box",
       category: "Focus",
       name: "Box",
-      description: "Equal inhale, hold, exhale, hold for composure under pressure. Shorten the count if the holds strain.",
+      description: "Equal inhale, hold, exhale, hold for composure under pressure. Set the side count to match the day.",
       phases: [
         BreathPhase(kind: .inhale, seconds: 4),
         BreathPhase(kind: .holdFull, seconds: 4),
         BreathPhase(kind: .exhale, seconds: 4),
         BreathPhase(kind: .holdEmpty, seconds: 4)
       ],
+      patternOverride: "3-6",
       source: "Box breathing (tactical breathing), used widely in military and first-responder training."
-    ),
-    Routine(
-      id: "box-5",
-      category: "Focus",
-      name: "Box 5",
-      description: "The square breath lengthened to five seconds a side as your tolerance grows.",
-      phases: [
-        BreathPhase(kind: .inhale, seconds: 5),
-        BreathPhase(kind: .holdFull, seconds: 5),
-        BreathPhase(kind: .exhale, seconds: 5),
-        BreathPhase(kind: .holdEmpty, seconds: 5)
-      ],
-      source: "An extended box-breathing variant."
     ),
     Routine(
       id: "bhramari",
@@ -413,7 +441,22 @@ struct Routine: Identifiable, Hashable {
   }
 
   static func byID(_ id: String) -> Routine? {
-    all.first { $0.id == id }
+    if id == "box-5" { return byID("box") }
+    return all.first { $0.id == id }
+  }
+}
+
+struct BoxBreathLength: Identifiable, Equatable {
+  let seconds: Int
+
+  var id: Int { seconds }
+  var label: String { "\(seconds)" }
+
+  static let defaultSeconds = 4
+  static let options = [3, 4, 5, 6].map { BoxBreathLength(seconds: $0) }
+
+  static func normalizedSeconds(_ seconds: Int) -> Int {
+    options.contains { $0.seconds == seconds } ? seconds : defaultSeconds
   }
 }
 
@@ -520,6 +563,7 @@ struct SessionDuration: Identifiable, Equatable {
   let seconds: TimeInterval?
   let label: String
   let unit: String?
+  let accessibilityLabel: String
 
   var id: String {
     seconds.map { String(Int($0)) } ?? "infinite"
@@ -531,21 +575,55 @@ struct SessionDuration: Identifiable, Equatable {
 
   var displayText: String {
     guard let seconds else { return "∞" }
-    let minutes = Int(seconds / 60)
-    return "\(minutes):00"
+    return seconds.clockText
+  }
+
+  init(seconds: TimeInterval?, label: String, unit: String?, accessibilityLabel: String? = nil) {
+    self.seconds = seconds
+    self.label = label
+    self.unit = unit
+    self.accessibilityLabel = accessibilityLabel ?? {
+      guard let unit else { return "Infinite" }
+      return "\(label) \(unit)"
+    }()
   }
 
   static let options: [SessionDuration] = [
-    SessionDuration(seconds: 60, label: "1", unit: "m"),
-    SessionDuration(seconds: 180, label: "3", unit: "m"),
-    SessionDuration(seconds: 300, label: "5", unit: "m"),
-    SessionDuration(seconds: 600, label: "10", unit: "m"),
-    SessionDuration(seconds: 1200, label: "20", unit: "m"),
+    SessionDuration(seconds: 60, label: "1", unit: "m", accessibilityLabel: "1 minute"),
+    SessionDuration(seconds: 180, label: "3", unit: "m", accessibilityLabel: "3 minutes"),
+    SessionDuration(seconds: 300, label: "5", unit: "m", accessibilityLabel: "5 minutes"),
+    SessionDuration(seconds: 600, label: "10", unit: "m", accessibilityLabel: "10 minutes"),
+    SessionDuration(seconds: 1200, label: "20", unit: "m", accessibilityLabel: "20 minutes"),
     SessionDuration(seconds: nil, label: "∞", unit: nil)
   ]
 
-  static func fromStored(seconds: Int) -> SessionDuration {
-    options.first { $0.storedSeconds == seconds } ?? options[1]
+  static func powerBreathOptions(roundDuration: TimeInterval) -> [SessionDuration] {
+    [
+      SessionDuration(
+        seconds: roundDuration,
+        label: "1",
+        unit: "round",
+        accessibilityLabel: "1 Power Breath round"
+      ),
+      SessionDuration(
+        seconds: roundDuration * 2,
+        label: "2",
+        unit: "rounds",
+        accessibilityLabel: "2 Power Breath rounds"
+      ),
+      SessionDuration(
+        seconds: roundDuration * 3,
+        label: "3",
+        unit: "rounds",
+        accessibilityLabel: "3 Power Breath rounds"
+      )
+    ]
+  }
+
+  static func fromStored(seconds: Int, options: [SessionDuration] = SessionDuration.options) -> SessionDuration {
+    options.first { $0.storedSeconds == seconds }
+      ?? options.first { $0.storedSeconds == 180 }
+      ?? options[0]
   }
 }
 

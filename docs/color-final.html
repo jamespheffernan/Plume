@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Plume — Finalising the Colour Combos</title>
+</head>
+<body style="margin:0;background:#141310;padding:38px 20px 90px;">
+<!--FRAGMENT-START-->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400;1,9..144,500&family=Manrope:wght@400;500;600;700&display=swap');
+.cf{font-family:"Manrope",system-ui,sans-serif;max-width:1120px;margin:0 auto;}
+.cf *{box-sizing:border-box;}
+.cf-lede{max-width:64ch;margin:0 auto 6px;}
+.cf-kicker{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:#8a8378;font-weight:600;margin:0 0 12px;}
+.cf-h1{font-family:"Fraunces",serif;font-weight:300;font-size:clamp(28px,4.4vw,44px);line-height:1.05;color:#efe7d8;margin:0 0 14px;letter-spacing:-.015em;}
+.cf-h1 em{font-style:italic;font-weight:400;color:#e7b98f;}
+.cf-intro{font-size:14.5px;line-height:1.62;color:#b6aea1;margin:0 0 4px;}
+.cf-intro b{color:#d8d0c2;font-weight:600;}
+.cf-eyebrow{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#8a8378;font-weight:600;margin:44px 0 6px;}
+.cf-sec{font-family:"Fraunces",serif;font-style:italic;font-weight:300;font-size:27px;color:#efe7d8;margin:0 0 4px;letter-spacing:-.01em;}
+.cf-sec b{font-style:normal;font-weight:500;}
+.cf-secsub{font-size:13px;color:#a49c90;margin:0 0 20px;line-height:1.55;max-width:70ch;}
+.cf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(288px,1fr));gap:18px;}
+.cf-grid.mini{grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:14px;opacity:.96;}
+
+.card{border-radius:22px;padding:20px 20px 17px;position:relative;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.22),0 20px 40px rgba(0,0,0,.28);}
+.card.mini{border-radius:18px;padding:15px 15px 13px;}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.name{font-family:"Fraunces",serif;font-style:italic;font-weight:400;font-size:23px;line-height:1.02;letter-spacing:-.01em;}
+.mini .name{font-size:19px;}
+.mood{font-size:10px;letter-spacing:.2em;text-transform:uppercase;margin-top:6px;font-weight:600;}
+.fam{font-family:"Manrope";font-size:10px;font-weight:600;letter-spacing:.04em;border-radius:999px;padding:4px 9px;white-space:nowrap;align-self:flex-start;margin-top:2px;}
+
+.stage{position:relative;height:150px;display:flex;align-items:center;justify-content:center;margin:6px 0 2px;}
+.mini .stage{height:118px;}
+.ring{position:absolute;width:118px;height:118px;border-radius:50%;border:1px solid;box-sizing:border-box;}
+.mini .ring{width:92px;height:92px;}
+.halo{position:absolute;width:96px;height:96px;border-radius:50%;filter:blur(23px);will-change:transform,opacity;}
+.mini .halo{width:74px;height:74px;}
+.sphere{position:absolute;width:96px;height:96px;border-radius:50%;will-change:transform,opacity;}
+.mini .sphere{width:74px;height:74px;}
+.num{position:absolute;display:grid;place-items:center;width:96px;height:96px;}
+.mini .num{width:74px;height:74px;}
+.num span{font-family:"Fraunces",serif;font-weight:300;font-size:50px;line-height:1;font-variant-numeric:tabular-nums;will-change:opacity;}
+.mini .num span{font-size:38px;}
+.phase{position:absolute;bottom:-2px;font-size:10px;letter-spacing:.4em;text-transform:uppercase;font-weight:600;}
+
+.spec{font-family:"Fraunces",serif;font-weight:300;font-size:16.5px;line-height:1.35;margin:9px 0 2px;letter-spacing:-.005em;}
+.spec em{font-style:italic;}
+.specsub{font-size:11.5px;line-height:1.5;font-weight:500;margin:0 0 12px;}
+
+.prog-lab{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;margin:12px 0 6px;}
+.prog{height:8px;border-radius:99px;overflow:hidden;position:relative;}
+.prog i{position:absolute;inset:0;width:64%;border-radius:99px;}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+
+.grad-lab{font-size:10px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;opacity:.7;margin:15px 0 6px;}
+.grad{height:24px;border-radius:8px;border:1px solid rgba(0,0,0,.08);}
+
+.chips{display:flex;gap:7px;margin-top:13px;}
+.chip{flex:1;text-align:center;}
+.chip i{display:block;height:26px;border-radius:7px;}
+.chip b{display:block;font-family:"Manrope";font-weight:600;font-size:9.5px;margin-top:5px;letter-spacing:.02em;font-feature-settings:"tnum";}
+.chip u{display:block;font-size:9px;text-decoration:none;opacity:.62;letter-spacing:.08em;text-transform:uppercase;margin-top:1px;}
+
+.ct{display:flex;gap:11px;font-size:11px;margin-top:13px;flex-wrap:wrap;align-items:center;}
+.ct span{display:inline-flex;align-items:baseline;gap:4px;}
+.ct b{font-weight:700;font-feature-settings:"tnum";}
+.ct small{font-size:9px;opacity:.7;}
+
+.dist{font-size:12.5px;line-height:1.5;margin-top:12px;}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+@media (max-width:520px){.cf-grid,.cf-grid.mini{grid-template-columns:1fr;}}
+</style>
+
+<div class="cf">
+  <div class="cf-lede">
+    <p class="cf-kicker">Plume · Colour system</p>
+    <h1 class="cf-h1">Three creams, <em>four ways out.</em></h1>
+    <p class="cf-intro">The shipped schemes were too alike — three warm creams with warm-brown accents, one theme tinted three ways. Four colourists, each with a different craft, re-solved it. <b>The Editor</b> keeps the editorial-paper soul but makes every stock nameable on its own. <b>The Art Director</b> opens a range of light↔dark and warm↔cool, with schemes for breathing after dark. <b>The Dyer</b> sources colour from real materials — indigo vats, cochineal, celadon glaze. <b>The Colour Scientist</b> constructs hues at mathematically maximal separation, verified to stay distinct for colour-blind eyes. Every one of the fourteen clears the floors: <b>ink ≥ 10:1, muted ≥ 4.5:1, accent ≥ 3:1</b>. The orbs are breathing live.</p>
+  </div>
+
+  <div id="cf-root"></div>
+</div>
+
+<script>
+const SCHEMES = [
+  // ---- currently shipped (the problem) ----
+  {group:"now", name:"Newsprint", mood:"Warm grey", fam:"Shipped", inv:false,
+   paper:"#F1EAD8", ink:"#2E2A25", accent:"#B8533C", muted:"#6E6358",
+   ink_c:11.9, muted_c:4.9, accent_c:4.0,
+   dist:"Warm-grey ink on cream, terracotta accent."},
+  {group:"now", name:"Sage", mood:"Apothecary", fam:"Shipped", inv:false,
+   paper:"#E7E6D2", ink:"#34423A", accent:"#A6762E", muted:"#586552",
+   ink_c:8.4, muted_c:4.9, accent_c:3.2,
+   dist:"Green ink on the same cream, ochre accent."},
+  {group:"now", name:"Evening", mood:"Dusk", fam:"Shipped", inv:false,
+   paper:"#E7E0CC", ink:"#222D49", accent:"#9C6B27", muted:"#595E78",
+   ink_c:10.4, muted_c:4.8, accent_c:3.5,
+   dist:"Indigo ink on the same cream, amber accent."},
+
+  // ---- Proposal A · The Editor ----
+  {group:"A", name:"Sepia & Clay", mood:"Warm pressed paper", fam:"Warm · oat", inv:false,
+   paper:"#F6ECD8", ink:"#36261C", accent:"#C2563D", muted:"#735F4F",
+   ink_c:12.34, muted_c:5.15, accent_c:3.82,
+   dist:"The warm room: a golden-oat stock and terracotta-clay accent — the only scheme that stays warm while its siblings go cool-blue and green.",
+   spec:"Breathe in for four.", specsub:"Let the count fill the vessel, then let it empty."},
+  {group:"A", name:"Oyster & Tide", mood:"Cool slate linen", fam:"Cool · oyster", inv:false,
+   paper:"#DBE7EE", ink:"#1E2D45", accent:"#0983B5", muted:"#505F70",
+   ink_c:11.00, muted_c:5.19, accent_c:3.39,
+   dist:"The temperature break: a cool oyster paper, slate-indigo ink and a marine-blue accent — every hue on the cold side of the wheel.",
+   spec:"Hold, and soften.", specsub:"A cooler light for the middle of a working day."},
+  {group:"A", name:"Herbarium & Madder", mood:"Pressed botanical", fam:"Botanical · sage", inv:false,
+   paper:"#E0EADD", ink:"#1C3627", accent:"#BC585B", muted:"#546859",
+   ink_c:10.57, muted_c:4.85, accent_c:3.62,
+   dist:"The third family: a green-grey herbarium page and pine ink, lit by a dusty madder-rose accent — neither oat-and-clay nor blue-grey.",
+   spec:"Exhale, slowly.", specsub:"A pressed-leaf green with a rose the colour of dried madder."},
+
+  // ---- Proposal B · The Art Director ----
+  {group:"B", name:"First Light", mood:"Warm dawn clarity", fam:"Warm · light", inv:false,
+   paper:"#F5ECE5", ink:"#3C2A24", accent:"#C15B57", muted:"#7B5D4F",
+   ink_c:11.63, muted_c:5.12, accent_c:3.67,
+   dist:"Dawn. A clean pale oat at half the chroma of the old creams and a redder claret accent — morning, not the old sand band.",
+   spec:"The first breath of the day.", specsub:"Pale oat paper, a claret the colour of first light."},
+  {group:"B", name:"Cold Harbor", mood:"Cool north daylight", fam:"Cool · light", inv:false,
+   paper:"#E0ECF0", ink:"#1E3548", accent:"#17919C", muted:"#4A6D80",
+   ink_c:10.51, muted_c:4.60, accent_c:3.13,
+   dist:"North noon: a sea-glass blue-grey field with a verdigris-teal accent — the only scheme on the cool side of neutral.",
+   spec:"Steady, like water.", specsub:"Sea-glass paper, a verdigris teal held in the accent."},
+  {group:"B", name:"Ember Study", mood:"Lamplit warm dark", fam:"Warm · dark", inv:true,
+   paper:"#311D14", ink:"#ECE2D6", accent:"#BB6F2C", muted:"#AF9A88",
+   ink_c:12.47, muted_c:5.93, accent_c:4.12,
+   dist:"A warm-dark study — deep cocoa-plum field, parchment ink, an ember-gold orb. The orb is the light now, not a mark on paper.",
+   spec:"Wind down by lamplight.", specsub:"Cocoa-plum dark, ember gold — the orb glows from within."},
+  {group:"B", name:"Blue Hour", mood:"Lights-out night", fam:"Cool · dark", inv:true,
+   paper:"#081F35", ink:"#DBEBEF", accent:"#C47157", muted:"#91A9B2",
+   ink_c:13.63, muted_c:6.78, accent_c:4.65,
+   dist:"The true night: a saturated indigo field (chroma rises as it darkens, never grey) where the orb becomes the one warm apricot point of light.",
+   spec:"The last breath before sleep.", specsub:"Deep indigo, a single apricot glow. Built for lights-out."},
+
+  // ---- Proposal C · The Dyer / Pigment Historian ----
+  {group:"C", name:"Cochineal Lake", mood:"Warm slow carmine", fam:"Carmine · light", inv:false,
+   paper:"#FBE7E8", ink:"#391619", accent:"#D24B58", muted:"#8C595B",
+   ink_c:13.58, muted_c:4.79, accent_c:3.62,
+   dist:"Ground from cochineal carmine — a blue-shifted crimson, cooler and pinker than madder, on a carmine-tinted ivory over oxblood ink. A dyestuff, not a rose.",
+   spec:"A slow carmine.", specsub:"Cochineal lake on ivory — pinker and cooler than madder."},
+  {group:"C", name:"Celadon Glaze", mood:"Cool jade stone", fam:"Celadon · light", inv:false,
+   paper:"#E4F0EA", ink:"#112821", accent:"#219271", muted:"#546E64",
+   ink_c:13.30, muted_c:4.73, accent_c:3.32,
+   dist:"From celadon (青磁) iron-reduction stoneware glaze — a pale jade-grey ceramic field with a fired-jade signal. A glazed-clay green, not herbarium sage.",
+   spec:"Cool as fired jade.", specsub:"Celadon 青磁 glaze — a glazed-clay green all its own."},
+  {group:"C", name:"Indigo Vat", mood:"Deep still dye", fam:"Indigo · dark", inv:true,
+   paper:"#091630", ink:"#E2ECF7", accent:"#AC8123", muted:"#8F9DAE",
+   ink_c:15.03, muted_c:6.50, accent_c:5.06,
+   dist:"From a fermented indigo dye vat — a near-black indigo field lit by the coppery 'flower' that blooms on its surface. Dyed cloth, not a night sky.",
+   spec:"Breathe into the vat.", specsub:"Fermented indigo; the coppery bloom becomes the light."},
+
+  // ---- Proposal D · The Colour Scientist ----
+  {group:"D", name:"Chalk & Cinnabar", mood:"Warm stillness", fam:"Red-orange · 40°", inv:false,
+   paper:"#EFEAE5", ink:"#2A2119", accent:"#C3562D", muted:"#6F6257",
+   ink_c:13.21, muted_c:4.93, accent_c:3.75,
+   dist:"Accent constructed at hue 40° (red-orange) — the set's only warm-red signal, held at equal perceptual weight and kept CVD-separate from the teal by its strong yellow pole.",
+   spec:"Warm stillness.", specsub:"A red-orange pinned at 40° — a coordinate, not a guess."},
+  {group:"D", name:"Vellum & Viridian", mood:"Cool clarity", fam:"Teal · 192°", inv:false,
+   paper:"#DDE1DA", ink:"#19251B", accent:"#018683", muted:"#51645B",
+   ink_c:12.00, muted_c:4.77, accent_c:3.35,
+   dist:"Accent at hue 192° (teal, not green) — chosen so red-green colour-blind users still separate it from the red on the blue-yellow axis. 152° from Chalk.",
+   spec:"Cool clarity.", specsub:"Teal at 192° — the CVD-safe choice green couldn't be."},
+  {group:"D", name:"Slate & Lazurite", mood:"Deep calm", fam:"Blue-violet · 278°", inv:false,
+   paper:"#CDD3DC", ink:"#182135", accent:"#5E63C5", muted:"#505A75",
+   ink_c:10.66, muted_c:4.56, accent_c:3.43,
+   dist:"Accent at hue 278° (blue-violet) — the coldest signal in the whole system, pushed past marine and verdigris into violet, and CVD-robust because blue survives both deutan and protan.",
+   spec:"Deep calm.", specsub:"Blue-violet at 278° — the coldest coordinate in the system."},
+  {group:"D", name:"Obsidian & Amber", mood:"Night warmth", fam:"Amber · dark", inv:true,
+   paper:"#0B121A", ink:"#E8E4DA", accent:"#EFA831", muted:"#8D9AA8",
+   ink_c:14.83, muted_c:6.56, accent_c:9.25,
+   dist:"A dark paper at L 0.18 on a cool hue so it never reads as grey; the amber orb at hue 75° is the brightest, most CVD-robust light-source in any scheme.",
+   spec:"Night warmth.", specsub:"An obsidian field, an amber orb at 75° — the light source."},
+];
+
+const SECTIONS = [
+  {key:"now", eyebrow:"Before · the problem", title:'Currently <b>shipped</b>', sub:"Three warm creams with warm-brown accents. Cover the ink and the three papers are nearly the same swatch — that is the sameness we are replacing.", mini:true},
+  {key:"A", eyebrow:"Proposal A · keeps the paper soul", title:'The <b>Editor</b> — three nameable stocks', sub:"Still light, still printed-on-fine-paper. But paper temperature and accent hue-family now do the separating: warm oat, cool oyster, botanical sage — 83° / 232° / 138° apart. Name the scheme from a 1 cm paper swatch alone.", mini:false},
+  {key:"B", eyebrow:"Proposal B · opens the range", title:'The <b>Art Director</b> — a room for every hour', sub:"Four corners of value × temperature: warm dawn, cool daylight, and two dark rooms for breathing after lights-out. In the dark schemes the orb inverts to become the light source, and the numeral stays readable.", mini:false},
+  {key:"C", eyebrow:"Proposal C · colour from materials", title:'The <b>Dyer</b> — cloth, clay & pigment', sub:"Each scheme is a real dye-house or kiln material rather than a paper stock: cochineal carmine, celadon glaze, a fermented indigo vat. Deeper, more pigment-saturated calm — a different physical metaphor entirely, with one rich dark for the vat.", mini:false},
+  {key:"D", eyebrow:"Proposal D · distinct by construction", title:'The <b>Colour Scientist</b> — every hue a coordinate', sub:"Distinctness guaranteed by geometry, not taste: papers on a fixed lightness ladder, accents at mathematically maximal hue separation (40° / 192° / 278°), and verified to stay distinguishable under red-green colour blindness. Rigor in service of calm.", mini:false},
+];
+
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+// derived, faithful to Theme.swift: orb = ink; accent lives in the progress bar; numeral = paper.
+function card(s, mini){
+  const bord = s.inv ? "rgba(255,255,255,.14)" : "rgba(0,0,0,.10)";
+  const chipBord = s.inv ? "rgba(255,255,255,.18)" : "rgba(0,0,0,.11)";
+  const sphere = `radial-gradient(circle at 40% 34%, ${hexA(s.ink,.9)}, ${s.ink} 78%)`;
+  const grad = `linear-gradient(90deg in oklch, ${s.paper} 0%, ${s.accent} 52%, ${s.ink} 100%)`;
+  const chip = (hex,lab,rgb)=>`<div class="chip"><i style="background:${hex};border:1px solid ${chipBord}"></i><b style="color:${s.ink}">${hex.toUpperCase()}</b><u style="color:${s.muted}">${lab}</u></div>`;
+  const specimen = mini ? "" :
+    `<div class="spec" style="color:${s.ink}">${esc(s.spec)}</div>
+     <div class="specsub" style="color:${s.muted}">${esc(s.specsub)}</div>`;
+  const progress = mini ? "" :
+    `<div class="prog-lab" style="color:${s.muted}"><span>Progress · accent</span><span class="dot" style="background:${s.accent}"></span></div>
+     <div class="prog" style="background:${hexA(s.ink,.13)}"><i style="background:${s.accent}"></i></div>`;
+  const gradient = mini ? "" :
+    `<div class="grad-lab" style="color:${s.muted}">paper → accent → ink</div>
+     <div class="grad" style="background:${grad};border-color:${bord}"></div>`;
+  return `<div class="card ${mini?'mini':''}" data-i="${s._i}" style="background:${s.paper};color:${s.ink};border:1px solid ${bord}">
+    <div class="head">
+      <div>
+        <div class="name">${esc(s.name)}</div>
+        <div class="mood" style="color:${s.muted}">${esc(s.mood)}</div>
+      </div>
+      <div class="fam" style="color:${s.accent};border:1px solid ${hexA(s.accent,.42)}">${esc(s.fam)}</div>
+    </div>
+    <div class="stage" data-inv="${s.inv?1:0}">
+      <div class="ring" style="border-color:${hexA(s.ink,.4)}"></div>
+      <div class="halo" style="background:${s.ink}"></div>
+      <div class="sphere" style="background:${sphere}"></div>
+      <div class="num"><span style="color:${s.paper}">4</span></div>
+      <div class="phase" style="color:${s.muted}">Inhale</div>
+    </div>
+    ${specimen}${progress}${gradient}
+    <div class="chips">
+      ${chip(s.paper,"paper")}${chip(s.ink,"ink")}${chip(s.accent,"accent")}${chip(s.muted,"muted")}
+    </div>
+    <div class="ct" style="color:${s.muted}">
+      <span><b style="color:${s.ink}">${s.ink_c.toFixed(1)}</b><small>ink</small></span>
+      <span><b style="color:${s.ink}">${s.muted_c.toFixed(1)}</b><small>muted</small></span>
+      <span><b style="color:${s.accent}">${s.accent_c.toFixed(1)}</b><small>accent</small></span>
+    </div>
+    <div class="dist" style="color:${s.ink};opacity:.84">${esc(s.dist)}</div>
+  </div>`;
+}
+function hexA(hex,a){const h=hex.replace('#','');const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);return `rgba(${r},${g},${b},${a})`;}
+
+(function(){
+  SCHEMES.forEach((s,i)=>s._i=i);
+  const root=document.getElementById("cf-root");
+  let html="";
+  SECTIONS.forEach(sec=>{
+    const list=SCHEMES.filter(s=>s.group===sec.key);
+    html+=`<div class="cf-eyebrow">${sec.eyebrow}</div><div class="cf-sec">${sec.title}</div><div class="cf-secsub">${sec.sub}</div><div class="cf-grid ${sec.mini?'mini':''}">`;
+    list.forEach(s=>html+=card(s,sec.mini));
+    html+=`</div>`;
+  });
+  root.innerHTML=html;
+
+  const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const smooth=x=>x*x*(3-2*x);
+  const stages=[...document.querySelectorAll(".stage")];
+  function apply(st,scale,fill,halo,phase){
+    const sp=st.querySelector(".sphere");sp.style.transform=`scale(${scale})`;sp.style.opacity=fill;
+    const h=st.querySelector(".halo");h.style.transform=`scale(${scale*1.05})`;h.style.opacity=halo;
+    st.querySelector(".num span").style.opacity=fill;
+    st.querySelector(".phase").textContent=phase;
+  }
+  if(RM){stages.forEach(st=>apply(st,0.9,1,st.dataset.inv==='1'?0.5:0.16,"Breathe"));return;}
+  const P=9;
+  function frame(ts){
+    const t=ts/1000;
+    stages.forEach((st,i)=>{
+      const ph=((t/P)+i*0.5)%1;
+      const swell=0.5-0.5*Math.cos(2*Math.PI*ph);
+      const scale=0.34+0.66*swell;            // grows from a small rest orb, like the app
+      let fill=Math.min(1,Math.max(0,(swell-0.02)/0.30));fill=smooth(fill);
+      const inv=st.dataset.inv==='1';
+      const halo=(inv?0.62:0.20)*(0.3+0.7*swell)*fill*fill;
+      apply(st,scale,fill,halo, ph<0.5?"Inhale":"Exhale");
+    });
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+<!--FRAGMENT-END-->
+</body>
+</html>

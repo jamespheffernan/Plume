@@ -7,11 +7,13 @@ struct BreatheClockRootView: View {
   @AppStorage("hapticsBreathSwell") private var swellHapticsEnabled = true
   @AppStorage("lastRoutine") private var lastRoutineID = Routine.coherence.id
   @AppStorage("durationSeconds") private var durationSeconds = 180
+  @AppStorage("powerBreathDurationSeconds") private var powerBreathDurationSeconds = 0
   @AppStorage("didAcknowledgeSafety") private var didAcknowledgeSafety = false
 
   @State private var route: AppRoute = .library
   @State private var selectedRoutine = Routine.coherence
   @State private var sessionRoutine = Routine.coherence
+  @State private var sessionDuration = Routine.coherence.defaultDuration
   @State private var showSafety = false
   // The staggered launch settle plays once, on the first cold-launch appearance
   // of the Library — not when returning from Setup/Settings, and never for the
@@ -43,10 +45,11 @@ struct BreatheClockRootView: View {
         SetupView(
           scheme: activeScheme,
           routine: selectedRoutine,
-          selectedDuration: durationBinding,
+          selectedDuration: durationBinding(for: selectedRoutine),
           onBack: { navigate(to: .library) },
-          onBegin: { resolved in
+          onBegin: { resolved, duration in
             sessionRoutine = resolved
+            sessionDuration = duration
             navigate(to: .session)
           }
         )
@@ -56,7 +59,7 @@ struct BreatheClockRootView: View {
         SessionView(
           scheme: activeScheme,
           routine: sessionRoutine,
-          duration: durationBinding.wrappedValue,
+          duration: sessionDuration,
           audioCue: activeAudioCue,
           hapticsEnabled: hapticsEnabled,
           swellHapticsEnabled: swellHapticsEnabled,
@@ -87,6 +90,7 @@ struct BreatheClockRootView: View {
     .task {
       selectedRoutine = Routine.byID(lastRoutineID) ?? .coherence
       sessionRoutine = selectedRoutine
+      sessionDuration = durationBinding(for: selectedRoutine).wrappedValue
       route = .library
       showSafety = !didAcknowledgeSafety
       // Testing hook: force a colour scheme so each palette can be screenshotted
@@ -112,6 +116,7 @@ struct BreatheClockRootView: View {
         suppressLaunchEntrance = true
         selectedRoutine = Routine.byID(direct) ?? .coherence
         sessionRoutine = selectedRoutine
+        sessionDuration = durationBinding(for: sessionRoutine).wrappedValue
         showSafety = false
         route = .session
       }
@@ -126,9 +131,23 @@ struct BreatheClockRootView: View {
     AudioCue(rawValue: audioRawValue) ?? .bowl
   }
 
-  private var durationBinding: Binding<SessionDuration> {
-    Binding(
-      get: { SessionDuration.fromStored(seconds: durationSeconds) },
+  private func durationBinding(for routine: Routine) -> Binding<SessionDuration> {
+    let options = routine.durationOptions
+
+    if routine.id == "wim-hof" {
+      return Binding(
+        get: {
+          SessionDuration.fromStored(
+            seconds: powerBreathDurationSeconds,
+            options: options
+          )
+        },
+        set: { powerBreathDurationSeconds = $0.storedSeconds }
+      )
+    }
+
+    return Binding(
+      get: { SessionDuration.fromStored(seconds: durationSeconds, options: options) },
       set: { durationSeconds = $0.storedSeconds }
     )
   }

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Plume — Colour Families</title>
+</head>
+<body style="margin:0;background:#e7e3db;padding:36px 26px 80px;">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=Manrope:wght@400;500;600&display=swap');
+.cf-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+.cf{font-family:"Manrope",system-ui,sans-serif;max-width:1080px;margin:0 auto;padding:.4rem 0 1rem;}
+.cf-lede{margin:0 0 8px;}
+.cf-eyebrow{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:#8a8276;font-weight:500;}
+.cf-h1{font-family:"Fraunces",serif;font-style:italic;font-weight:300;font-size:clamp(34px,5vw,54px);letter-spacing:-.01em;margin:4px 0 6px;color:#2c2722;}
+.cf-intro{font-size:14px;color:#6b6358;max-width:70ch;line-height:1.6;margin:0 0 8px;}
+.cf-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:30px 0 3px;}
+.cf-fam{font-family:"Fraunces",serif;font-style:italic;font-weight:300;font-size:26px;color:#2c2722;letter-spacing:-.01em;}
+.cf-tag{font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:500;color:#8a8276;}
+.cf-coh{font-size:12.5px;color:#6b6358;margin:0 0 14px;line-height:1.5;max-width:80ch;}
+.cf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;}
+.cf-card{border-radius:15px;padding:16px 16px 14px;position:relative;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.12),0 10px 24px rgba(0,0,0,.14);}
+.cf-spec{font-family:"Fraunces",serif;font-style:italic;font-weight:300;font-size:27px;line-height:1;}
+.cf-name{font-size:12px;font-weight:600;letter-spacing:.02em;margin-top:10px;}
+.cf-mood{font-size:11px;line-height:1.4;margin-top:1px;}
+.cf-bar{height:6px;border-radius:4px;margin:12px 0 10px;}
+.cf-hex{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;}
+.cf-hex span{font-size:11px;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:5px;}
+.cf-hex i{width:10px;height:10px;border-radius:3px;flex:none;}
+.cf-ok{position:absolute;top:14px;right:15px;font-size:11px;letter-spacing:.08em;font-weight:500;opacity:.7;}
+.cf-foot{color:#8a8276;font-size:12px;margin-top:44px;}
+</style>
+
+<h2 class="cf-sr">Six colour families for the Plume breathing app, each locked to one OKLCH brightness and saturation signature with only hue rotating, arranged across the warm-to-cool and light-to-dark temperature map. Each theme shows paper, an ink type specimen, the muted tone and the accent, with hex values and an AA contrast pass.</h2>
+
+<div class="cf">
+  <div class="cf-eyebrow">Plume · colour study</div>
+  <div class="cf-h1">Colour Families</div>
+  <p class="cf-intro">Each family holds one brightness and one saturation fixed and turns only the hue, so the four siblings always belong together. The families spread across the temperature map — warm, cool, neutral; light to dark — so you can find a lane before we refine. Built on the Interface&nbsp;Craft colour method; every palette clears WCAG&nbsp;AA.</p>
+  <div id="cf-root"></div>
+  <p class="cf-foot">paper · ink · accent · muted, per theme. Contrast ink≥7:1, muted≥4.5:1, accent≥3:1, all sRGB-in-gamut.</p>
+</div>
+
+<script>
+const FAMS=[{"family":"Warm chalk","character":"light, soft, unmistakably warm — fresh plaster and pressed flowers in daylight","cohesion":"Fixed OKLCH per role across all 4 siblings: paper L0.93/C0.020, ink L0.30/C0.030, accent L0.61/C0.100, muted L0.50/C0.045 — only hue rotates, so all four read as equal-weight warm-tinted siblings.","inverted":false,"themes":[{"name":"Terracotta","mood":"dried terracotta on warm plaster","paper":"#F5E4DE","ink":"#3B2922","accent":"#B66D54","muted":"#7A5B50","ci":11.2,"cm":5.0,"ca":3.2,"inv":false},{"name":"Wheat","mood":"sun-bleached wheat and honey","paper":"#F1E6DA","ink":"#382B1D","accent":"#A9783A","muted":"#745F47","ci":11.2,"cm":4.9,"ca":3.1,"inv":false},{"name":"Olive","mood":"dusty olive-gold meadow","paper":"#EBE8DA","ink":"#312E1D","accent":"#918436","muted":"#696446","ci":11.1,"cm":4.9,"ca":3.1,"inv":false},{"name":"Clay","mood":"clay-rose and pressed petals","paper":"#F5E3E1","ink":"#3C2826","accent":"#B86A64","muted":"#7B5956","ci":11.1,"cm":5.0,"ca":3.2,"inv":false}]},{"family":"Sunbaked clay","character":"mid-lightness, warm, richly saturated — sun-warmed earth pigment, calm but confident","cohesion":"Fixed signature paper L0.85/C0.050, ink L0.32/C0.050, accent L0.52/C0.105, muted L0.45/C0.060 — only the hue rotates, so they read as one warm-earth temperature.","inverted":false,"themes":[{"name":"Terracotta","mood":"sun-fired clay pot","paper":"#ECC4B6","ink":"#492A1F","accent":"#9B5238","muted":"#724A3C","ci":8.0,"cm":4.8,"ca":3.6,"inv":false},{"name":"Ochre","mood":"raw yellow-earth pigment","paper":"#E5C8AC","ink":"#442D15","accent":"#925A1A","muted":"#6C4E30","ci":8.1,"cm":4.8,"ca":3.6,"inv":false},{"name":"Sienna","mood":"burnt rust-red soil","paper":"#EDC2BC","ink":"#492924","accent":"#9C4F46","muted":"#734842","ci":8.0,"cm":4.8,"ca":3.6,"inv":false},{"name":"Bronze","mood":"dusty olive-gold metal","paper":"#DACDA9","ink":"#3D3212","accent":"#806504","muted":"#62542C","ci":8.0,"cm":4.7,"ca":3.5,"inv":false}]},{"family":"Apothecary","character":"mid-brightness, low-saturation, herbal-neutral warmth — dried botanicals under apothecary glass","cohesion":"Fixed signature paper L0.865/C0.035, ink L0.30/C0.050, accent L0.52/C0.105, muted L0.465/C0.055; only hue rotates, one warm green-natural temperature throughout.","inverted":false,"themes":[{"name":"Sage","mood":"dried garden sage","paper":"#C9D8C1","ink":"#233319","accent":"#4D7635","muted":"#4C6141","ci":9.0,"cm":4.5,"ca":3.6,"inv":false},{"name":"Olive","mood":"cured olive brine","paper":"#D6D4BA","ink":"#322F0E","accent":"#726C0F","muted":"#5E5B36","ci":9.0,"cm":4.6,"ca":3.6,"inv":false},{"name":"Moss","mood":"damp forest moss","paper":"#C3DAC7","ink":"#1A3520","accent":"#357A47","muted":"#436249","ci":9.0,"cm":4.6,"ca":3.5,"inv":false},{"name":"Mushroom","mood":"dried tan mushroom","paper":"#E1D0BA","ink":"#3C2A0E","accent":"#8C5F0E","muted":"#6C5536","ci":9.1,"cm":4.7,"ca":3.7,"inv":false}]},{"family":"Cool mist","character":"light, hazy, unmistakably cool — morning fog not afternoon sun","cohesion":"Fixed OKLCH per role across all four: paper L0.93/C0.018, ink L0.30/C0.035, accent L0.60/C0.100, muted L0.50/C0.045 — all cool; only hue rotates.","inverted":false,"themes":[{"name":"Periwinkle","mood":"cold morning haze","paper":"#DFE9F4","ink":"#202F3F","accent":"#4F84BA","muted":"#50667C","ci":11.1,"cm":4.8,"ca":3.2,"inv":false},{"name":"Slate","mood":"harbour fog at dawn","paper":"#DCEBF1","ink":"#19323B","accent":"#2B8CAD","muted":"#476977","ci":11.0,"cm":4.8,"ca":3.1,"inv":false},{"name":"Teal","mood":"cool sea breath","paper":"#DBECEB","ink":"#163333","accent":"#0F9293","muted":"#446C6B","ci":11.1,"cm":4.8,"ca":3.1,"inv":false},{"name":"Lavender","mood":"pale frost light","paper":"#E6E6F4","ink":"#2C2B3F","accent":"#7A77BA","muted":"#60607C","ci":11.1,"cm":4.9,"ca":3.3,"inv":false}]},{"family":"Deep dusk","character":"cool, dark, quietly saturated — one evening temperature, rich deep fields, a single luminous accent","cohesion":"Fixed OKLCH signature across all 4: paper(dark) L0.21/C0.040, ink(light) L0.88/C0.030, accent L0.66/C0.110, muted L0.62/C0.045; only hue rotates.","inverted":true,"themes":[{"name":"Indigo","mood":"ink-dark twilight blue","paper":"#0F182B","ink":"#CED8EC","accent":"#7190D6","muted":"#7986A2","ci":12.4,"cm":4.8,"ca":5.6,"inv":true},{"name":"Nocturne","mood":"deep midnight harbour","paper":"#011B27","ink":"#C4DCE8","accent":"#3A9EC8","muted":"#6A8C9C","ci":12.4,"cm":4.9,"ca":5.8,"inv":true},{"name":"Tidal","mood":"dark abyssal teal","paper":"#011D1E","ink":"#C2DEDF","accent":"#10A6AD","muted":"#668F91","ci":12.4,"cm":4.9,"ca":5.9,"inv":true},{"name":"Plum","mood":"cool dusk violet","paper":"#1B1428","ink":"#DAD3E9","accent":"#9D82CC","muted":"#8A809E","ci":12.3,"cm":4.8,"ca":5.5,"inv":true}]},{"family":"Ember night","character":"dark, warm, low-saturation glow — firelit cream on near-black coals with a single ember signal","cohesion":"Fixed OKLCH signature across all 4: paper L0.19/C0.040, ink L0.90/C0.040, accent L0.68/C0.130, muted L0.66/C0.050 — one warm hue per sibling on every role; only hue rotates.","inverted":true,"themes":[{"name":"Amber","mood":"banked coals at dusk","paper":"#210E02","ink":"#F4D8C5","accent":"#D58042","muted":"#AB8B75","ci":13.7,"cm":5.9,"ca":6.2,"inv":true},{"name":"Copper","mood":"warmed copper kettle","paper":"#230C09","ink":"#F8D5CF","accent":"#DD7767","muted":"#AF8780","ci":13.7,"cm":5.8,"ca":6.1,"inv":true},{"name":"Rose","mood":"dying ember rose","paper":"#230B0E","ink":"#F8D4D5","accent":"#DC747E","muted":"#AF8688","ci":13.7,"cm":5.8,"ca":6.1,"inv":true},{"name":"Hearth","mood":"molten gold firelight","paper":"#1D1100","ink":"#ECDCC1","accent":"#C28E24","muted":"#A38F70","ci":13.8,"cm":5.9,"ca":6.3,"inv":true}]}];
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function tag(f){return esc(f.character.split("—")[0].trim().replace(/,/g," ·"));}
+function card(t,inv){const bord=inv?"rgba(255,255,255,.13)":"rgba(0,0,0,.09)";const cb=inv?"rgba(255,255,255,.2)":"rgba(0,0,0,.14)";
+ const hx=(c,n)=>'<span style="color:'+t.muted+'"><i style="background:'+c+';border:1px solid '+cb+'"></i>'+n.toUpperCase()+'</span>';
+ return '<div class="cf-card" style="background:'+t.paper+';border:1px solid '+bord+'">'
+ +'<div class="cf-ok" style="color:'+t.muted+'">AA</div>'
+ +'<div class="cf-spec" style="color:'+t.ink+'">Breathe</div>'
+ +'<div class="cf-name" style="color:'+t.ink+'">'+esc(t.name)+'</div>'
+ +'<div class="cf-mood" style="color:'+t.muted+'">'+esc(t.mood)+'</div>'
+ +'<div class="cf-bar" style="background:'+t.accent+'"></div>'
+ +'<div class="cf-hex">'+hx(t.paper,t.paper)+hx(t.accent,t.accent)+hx(t.ink,t.ink)+hx(t.muted,t.muted)+'</div>'
+ +'</div>';}
+(function(){let h="";
+ FAMS.forEach(f=>{h+='<div class="cf-head"><span class="cf-fam">'+esc(f.family)+'</span><span class="cf-tag">'+tag(f)+'</span></div>';
+  h+='<div class="cf-coh">'+esc(f.cohesion)+'</div><div class="cf-grid">';
+  f.themes.forEach(t=>h+=card(t,f.inverted));h+='</div>';});
+ document.getElementById("cf-root").innerHTML=h;})();
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Plume — Cool Mist</title></head>
+<body style="margin:0;background:#e9e6df;padding:36px 26px 88px;">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=Manrope:wght@400;500;600&display=swap');
+.cf-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+.cf{font-family:"Manrope",system-ui,sans-serif;max-width:1080px;margin:0 auto;}
+.cf-eyebrow{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:#7d8794;font-weight:500;}
+.cf-h1{font-family:"Fraunces",serif;font-style:italic;font-weight:300;font-size:clamp(34px,5vw,54px);letter-spacing:-.01em;margin:4px 0 6px;color:#22303b;}
+.cf-intro{font-size:14px;color:#5a6671;max-width:70ch;line-height:1.6;margin:0 0 8px;}
+.cf-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:30px 0 3px;}
+.cf-fam{font-family:"Fraunces",serif;font-style:italic;font-weight:300;font-size:25px;color:#22303b;letter-spacing:-.01em;}
+.cf-tag{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:500;color:#7d8794;}
+.cf-coh{font-size:12.5px;color:#5a6671;margin:0 0 14px;line-height:1.5;max-width:82ch;}
+.cf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;}
+.cf-card{border-radius:15px;padding:16px 16px 14px;position:relative;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.10),0 10px 24px rgba(0,0,0,.12);}
+.cf-spec{font-family:"Fraunces",serif;font-style:italic;font-weight:300;font-size:27px;line-height:1;}
+.cf-name{font-size:12px;font-weight:600;letter-spacing:.02em;margin-top:10px;}
+.cf-mood{font-size:11px;line-height:1.4;margin-top:1px;}
+.cf-bar{height:6px;border-radius:4px;margin:12px 0 10px;}
+.cf-hex{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;}
+.cf-hex span{font-size:11px;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:5px;}
+.cf-hex i{width:10px;height:10px;border-radius:3px;flex:none;}
+.cf-ok{position:absolute;top:14px;right:15px;font-size:11px;letter-spacing:.08em;font-weight:500;opacity:.7;}
+.cf-foot{color:#7d8794;font-size:12px;margin-top:44px;}
+</style>
+<h2 class="cf-sr">A deep dive into the Cool mist colour family for Plume: a temperature arc of eight hue siblings, a pigment dial, and a neutral-coolness dial. Each theme shows paper, an ink specimen, the muted tone and the accent with hex values, all WCAG AA.</h2>
+<div class="cf">
+  <div class="cf-eyebrow">Plume · colour study · cool mist</div>
+  <div class="cf-h1">Cool Mist</div>
+  <p class="cf-intro">Inside the lane you chose. Top: the temperature arc — eight cool hues at one fixed brightness and saturation. Then two dials to tune the signature: how much pigment, and how cool the neutrals themselves read. Pick a hue and a setting on each dial and we lock it.</p>
+  <div id="cf-root"></div>
+  <p class="cf-foot">paper · ink · accent · muted. ink&ge;7:1, muted&ge;4.5:1, accent&ge;3:1, all sRGB in-gamut. Built on the Interface Craft colour method.</p>
+</div>
+<script>
+const SECTIONS=[{"title":"Cool mist \u00b7 the temperature arc","tag":"light \u00b7 soft \u00b7 cool \u2014 only hue turns","note":"Eight siblings at the exact Cool mist signature (paper L0.93 C0.018, ink L0.30, accent L0.60 C0.10). Cooler as you move right \u2014 green-cool to violet-cool. Pick the hue that reads right.","themes":[{"name":"Sea glass","mood":"coolest, faint green","paper":"#DBECEA","ink":"#173332","accent":"#14938D","muted":"#446C69","ci":11.1,"cm":4.8,"ca":3.1,"inv":false},{"name":"Teal","mood":"cool sea breath","paper":"#DBECEC","ink":"#163335","accent":"#0D9298","muted":"#436B6D","ci":11.0,"cm":4.8,"ca":3.1,"inv":false},{"name":"Slate","mood":"harbour fog","paper":"#DBEBEF","ink":"#173338","accent":"#1790A3","muted":"#446A72","ci":10.9,"cm":4.8,"ca":3.1,"inv":false},{"name":"Steel","mood":"grey-blue dusk","paper":"#DCEBF1","ink":"#19323B","accent":"#2B8CAD","muted":"#476977","ci":11.0,"cm":4.8,"ca":3.2,"inv":false},{"name":"Periwinkle","mood":"cold morning haze","paper":"#DEE9F3","ink":"#1F303E","accent":"#4886B8","muted":"#4E667C","ci":11.0,"cm":4.9,"ca":3.2,"inv":false},{"name":"Cornflower","mood":"clear cold sky","paper":"#E1E8F4","ink":"#242E40","accent":"#5F80BC","muted":"#55647D","ci":11.1,"cm":4.9,"ca":3.2,"inv":false},{"name":"Lavender","mood":"pale frost light","paper":"#E5E7F4","ink":"#2B2C3F","accent":"#7778BA","muted":"#5F607D","ci":11.1,"cm":4.9,"ca":3.3,"inv":false},{"name":"Orchid","mood":"cool violet","paper":"#E9E5F2","ink":"#302A3D","accent":"#8972B3","muted":"#675E7A","ci":11.1,"cm":4.9,"ca":3.3,"inv":false}]},{"title":"Pigment dial \u00b7 how much colour","tag":"steel-blue held \u00b7 chroma rises","note":"Same hue, same brightness \u2014 only saturation changes, whisper to vivid. Tells me how present the colour should be.","themes":[{"name":"Whisper","mood":"barely-there tint","paper":"#E2E9EC","ink":"#263034","accent":"#638695","muted":"#57666C","ci":11.0,"cm":4.9,"ca":3.2,"inv":false},{"name":"Standard","mood":"the cool-mist default","paper":"#DCEBF1","ink":"#19323B","accent":"#2B8CAD","muted":"#476977","ci":11.0,"cm":4.8,"ca":3.2,"inv":false},{"name":"Rich","mood":"more pigment","paper":"#D8ECF4","ink":"#043342","accent":"#008DB3","muted":"#316C81","ci":11.1,"cm":4.8,"ca":3.2,"inv":false},{"name":"Vivid","mood":"fullest cool","paper":"#D8ECF4","ink":"#003343","accent":"#008DB3","muted":"#016E8C","ci":11.1,"cm":4.8,"ca":3.2,"inv":false}]},{"title":"Neutral dial \u00b7 how cool the page reads","tag":"accent held cool \u00b7 neutrals warm\u2192cool","note":"The accent stays cool; the paper/ink/muted move from a true neutral grey to fully cool-tinted. Tells me how cold the field itself should feel.","themes":[{"name":"Pure grey","mood":"neutral field, cool accent","paper":"#E8E8E8","ink":"#2E2E2E","accent":"#2B8CAD","muted":"#636363","ci":11.1,"cm":4.9,"ca":3.1,"inv":false},{"name":"Faint","mood":"a breath of cool","paper":"#DFEAEF","ink":"#213137","accent":"#2B8CAD","muted":"#516770","ci":11.0,"cm":4.9,"ca":3.1,"inv":false},{"name":"Cool","mood":"the default tint","paper":"#D7ECF5","ink":"#11323E","accent":"#2B8CAD","muted":"#3F6A7B","ci":11.1,"cm":4.8,"ca":3.2,"inv":false},{"name":"Deep cool","mood":"fully cool neutrals","paper":"#CEEEFB","ink":"#003343","accent":"#2B8CAD","muted":"#1C6D88","ci":11.1,"cm":4.8,"ca":3.2,"inv":false}]}];
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function card(t){var inv=t.inv;var bord=inv?"rgba(255,255,255,.13)":"rgba(0,0,0,.09)";var cb=inv?"rgba(255,255,255,.2)":"rgba(0,0,0,.14)";
+ function hx(c,n){return '<span style="color:'+t.muted+'"><i style="background:'+c+';border:1px solid '+cb+'"></i>'+n.toUpperCase()+'</span>';}
+ return '<div class="cf-card" style="background:'+t.paper+';border:1px solid '+bord+'">'
+ +'<div class="cf-ok" style="color:'+t.muted+'">AA</div>'
+ +'<div class="cf-spec" style="color:'+t.ink+'">Breathe</div>'
+ +'<div class="cf-name" style="color:'+t.ink+'">'+esc(t.name)+'</div>'
+ +'<div class="cf-mood" style="color:'+t.muted+'">'+esc(t.mood)+'</div>'
+ +'<div class="cf-bar" style="background:'+t.accent+'"></div>'
+ +'<div class="cf-hex">'+hx(t.paper,t.paper)+hx(t.accent,t.accent)+hx(t.ink,t.ink)+hx(t.muted,t.muted)+'</div></div>';}
+(function(){var h="";SECTIONS.forEach(function(s){
+  h+='<div class="cf-head"><span class="cf-fam">'+esc(s.title)+'</span><span class="cf-tag">'+esc(s.tag)+'</span></div>';
+  h+='<div class="cf-coh">'+esc(s.note)+'</div><div class="cf-grid">';
+  s.themes.forEach(function(t){h+=card(t);});h+='</div>';});
+ document.getElementById("cf-root").innerHTML=h;})();
+</script>
+</body></html>

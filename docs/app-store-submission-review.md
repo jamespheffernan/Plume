@@ -60,8 +60,21 @@ These are App Store Connect requirements. You cannot submit until they exist.
 - [x] Rename the "Wim Hof" routine to avoid the trademark → renamed to **Power Breath** (commit `73cdb54`)
 - [x] Add `PrivacyInfo.xcprivacy` for the `UserDefaults` required-reason API (commit `006a3ad`)
 - [x] Trim the alternate-icon list to the two icons that exist (commit `9ab59ca`)
-- [ ] Confirm the privacy policy will state "no data collected" and host it — **yours to do (App Store Connect)**
+- [x] Confirm the privacy policy will state "no data collected" and host it — live at `https://plume.turfterrace.com/privacy/`
 - [x] Run the archive + validate dry-run before the real upload — run with `PLUME_SKIP_UPLOAD=1`
+
+## Support and privacy URLs (deployed, 2026-07-07)
+
+Static App Store support pages live in `site/` and are deployed on Cloudflare Pages project `plume`:
+
+- Live Support URL: `https://plume.turfterrace.com/support/`
+- Live Privacy Policy URL: `https://plume.turfterrace.com/privacy/`
+- Fallback Pages URLs: `https://plume-aep.pages.dev/support/` and `https://plume-aep.pages.dev/privacy/`
+- Custom-domain status: DNS configured with a proxied CNAME, and Cloudflare Pages validation is active.
+- Support email in the page source: `support@turfterrace.com`
+- Privacy posture in the page source: no app data collected, no analytics, no tracking, no accounts, no HealthKit/location/camera/microphone/contacts/photos/notifications access, and local-only preferences via UserDefaults.
+
+Still required outside the repo: save the live support and privacy URLs in App Store Connect.
 
 ## Closeout status (loop, 2026-07-07)
 

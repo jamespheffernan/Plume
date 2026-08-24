@@ -5,9 +5,18 @@ struct SetupView: View {
   let routine: Routine
   @Binding var selectedDuration: SessionDuration
   let onBack: () -> Void
-  let onBegin: (Routine) -> Void
+  let onBegin: (Routine, SessionDuration) -> Void
 
+  @AppStorage("boxSideSeconds") private var boxSideSeconds = BoxBreathLength.defaultSeconds
   @State private var showingSafetyGate = false
+
+  private var selectedBoxSideSeconds: Int {
+    BoxBreathLength.normalizedSeconds(boxSideSeconds)
+  }
+
+  private var activeRoutine: Routine {
+    routine.withBoxSideSeconds(selectedBoxSideSeconds)
+  }
 
   var body: some View {
     VStack(spacing: 0) {
@@ -24,7 +33,7 @@ struct SetupView: View {
             Spacer(minLength: 30)
 
             VStack(spacing: 0) {
-              Text(routine.name)
+              Text(activeRoutine.name)
                 .font(BreatheFont.display(56, weight: .light, italic: true))
                 .foregroundStyle(scheme.ink)
                 .tracking(-1.1)
@@ -32,7 +41,7 @@ struct SetupView: View {
                 .minimumScaleFactor(0.55)
                 .padding(.bottom, 16)
 
-              Text(routine.description)
+              Text(activeRoutine.description)
                 .font(BreatheFont.display(16, weight: .regular))
                 .foregroundStyle(scheme.ink)
                 .multilineTextAlignment(.center)
@@ -42,7 +51,7 @@ struct SetupView: View {
 
               content
 
-              if let source = routine.source {
+              if let source = activeRoutine.source {
                 Text(source)
                   .font(BreatheFont.utility(11, weight: .light))
                   .foregroundStyle(scheme.muted)
@@ -98,10 +107,15 @@ struct SetupView: View {
 
   @ViewBuilder
   private var content: some View {
-    if routine.isProgram {
+    if activeRoutine.isProgram {
       programBlock
-    } else if routine.isTimed {
-      patternBlock
+    } else if activeRoutine.isTimed {
+      VStack(spacing: routine.supportsBoxLengthControl ? 24 : 0) {
+        patternBlock
+        if routine.supportsBoxLengthControl {
+          boxLengthPicker
+        }
+      }
     } else {
       untimedBlock
     }
@@ -109,7 +123,7 @@ struct SetupView: View {
 
   @ViewBuilder
   private var patternBlock: some View {
-    if routine.phases.count > 6 {
+    if activeRoutine.phases.count > 6 {
       compactPatternBlock
     } else {
       detailedPatternBlock
@@ -122,7 +136,7 @@ struct SetupView: View {
   private var detailedPatternBlock: some View {
     Grid(horizontalSpacing: 14, verticalSpacing: 11) {
       GridRow(alignment: .center) {
-        ForEach(Array(routine.phases.enumerated()), id: \.offset) { index, phase in
+        ForEach(Array(activeRoutine.phases.enumerated()), id: \.offset) { index, phase in
           if index > 0 {
             Text("·")
               .font(BreatheFont.display(28, weight: .light))
@@ -138,7 +152,7 @@ struct SetupView: View {
       }
 
       GridRow {
-        ForEach(Array(routine.phases.enumerated()), id: \.offset) { index, phase in
+        ForEach(Array(activeRoutine.phases.enumerated()), id: \.offset) { index, phase in
           if index > 0 {
             Color.clear.frame(width: 1, height: 0)
           }
@@ -158,7 +172,7 @@ struct SetupView: View {
     VStack(spacing: 12) {
       // One line that scales to fit, so the " · " separators never wrap and
       // strand a dot at the start of a line.
-      Text(routine.patternText)
+      Text(activeRoutine.patternText)
         .font(BreatheFont.display(30, weight: .light))
         .foregroundStyle(scheme.ink)
         .monospacedDigit()
@@ -176,7 +190,7 @@ struct SetupView: View {
 
   private var programBlock: some View {
     VStack(spacing: 0) {
-      ForEach(Array((routine.program ?? []).enumerated()), id: \.offset) { _, stage in
+      ForEach(Array((activeRoutine.program ?? []).enumerated()), id: \.offset) { _, stage in
         HStack(alignment: .firstTextBaseline, spacing: 12) {
           Text(stage.title)
             .font(BreatheFont.display(18, weight: .regular, italic: true))
@@ -228,9 +242,9 @@ struct SetupView: View {
 
   @ViewBuilder
   private var footer: some View {
-    if routine.isProgram {
+    if activeRoutine.isProgram {
       programFooter
-    } else if routine.isTimed {
+    } else if activeRoutine.isTimed {
       timedFooter
     } else {
       descriptionOnlyFooter
@@ -245,7 +259,7 @@ struct SetupView: View {
         .padding(.horizontal, 28)
         .padding(.bottom, 24)
 
-      if let note = routine.safetyNote, !routine.requiresAcknowledgement {
+      if let note = activeRoutine.safetyNote, !activeRoutine.requiresAcknowledgement {
         safetyNoteBlock(note)
       }
 
@@ -257,7 +271,7 @@ struct SetupView: View {
 
   private var programFooter: some View {
     VStack(spacing: 0) {
-      Text("Completes at \(routine.programTotalDuration.clockText)")
+      Text("Completes at \(activeRoutine.programTotalDuration.clockText)")
         .font(BreatheFont.utility(10, weight: .light))
         .foregroundStyle(scheme.muted)
         .tracking(1.5)
@@ -272,14 +286,14 @@ struct SetupView: View {
 
   private var durationPicker: some View {
     VStack(spacing: 15) {
-      Text("Duration")
+      Text(activeRoutine.durationControlTitle)
         .font(BreatheFont.utility(10, weight: .regular))
         .foregroundStyle(scheme.muted)
         .tracking(3.1)
         .textCase(.uppercase)
 
       HStack(spacing: 5) {
-        ForEach(SessionDuration.options) { option in
+        ForEach(activeRoutine.durationOptions) { option in
           Button {
             selectedDuration = option
           } label: {
@@ -303,7 +317,7 @@ struct SetupView: View {
             }
           }
           .buttonStyle(.plain)
-          .accessibilityLabel(option.seconds == nil ? "Infinite" : "\(option.label) minutes")
+          .accessibilityLabel(option.accessibilityLabel)
           .accessibilityAddTraits(selectedDuration == option ? .isSelected : [])
         }
       }
@@ -311,15 +325,8 @@ struct SetupView: View {
       // surrounding labels and copy still scale freely.
       .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
 
-      if let alignmentText = routine.alignmentText(for: selectedDuration) {
-        Text(alignmentText)
-          .font(BreatheFont.utility(10, weight: .light))
-          .foregroundStyle(scheme.muted)
-          .tracking(1.5)
-          .textCase(.uppercase)
-          .padding(.top, 2)
-      } else if routine.hasHoldPhases {
-        Text("Audio plays for hold phases too")
+      if let helperText = durationHelperText {
+        Text(helperText)
           .font(BreatheFont.utility(10, weight: .light))
           .foregroundStyle(scheme.muted)
           .tracking(1.5)
@@ -327,6 +334,60 @@ struct SetupView: View {
           .padding(.top, 2)
       }
     }
+  }
+
+  private var boxLengthPicker: some View {
+    VStack(spacing: 12) {
+      Text("Count")
+        .font(BreatheFont.utility(10, weight: .regular))
+        .foregroundStyle(scheme.muted)
+        .tracking(3.1)
+        .textCase(.uppercase)
+
+      HStack(spacing: 5) {
+        ForEach(BoxBreathLength.options) { option in
+          Button {
+            boxSideSeconds = option.seconds
+          } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+              Text(option.label)
+                .font(BreatheFont.display(18, weight: selectedBoxSideSeconds == option.seconds ? .regular : .light))
+              Text("s")
+                .font(BreatheFont.utility(10, weight: .regular))
+                .tracking(0.5)
+            }
+            .lineLimit(1)
+            .foregroundStyle(selectedBoxSideSeconds == option.seconds ? scheme.ink : scheme.muted)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .overlay(alignment: .bottom) {
+              Rectangle()
+                .fill(selectedBoxSideSeconds == option.seconds ? scheme.ink : Color.clear)
+                .frame(height: 1)
+            }
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel("\(option.seconds) seconds per side")
+          .accessibilityAddTraits(selectedBoxSideSeconds == option.seconds ? .isSelected : [])
+        }
+      }
+      .frame(maxWidth: 236)
+      .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+    }
+  }
+
+  private var durationHelperText: String? {
+    if activeRoutine.id == "wim-hof",
+       let seconds = activeRoutine.alignedSessionDuration(for: selectedDuration) {
+      return "Completes at \(seconds.clockText)"
+    }
+    if let alignmentText = activeRoutine.alignmentText(for: selectedDuration) {
+      return alignmentText
+    }
+    if activeRoutine.hasHoldPhases {
+      return "Audio plays for hold phases too"
+    }
+    return nil
   }
 
   private func beginButton(_ title: String) -> some View {
@@ -343,7 +404,7 @@ struct SetupView: View {
       .background(Capsule().fill(scheme.ink))
     }
     .buttonStyle(.plain)
-    .accessibilityLabel("\(title), \(routine.name)")
+    .accessibilityLabel("\(title), \(activeRoutine.name)")
   }
 
   private var descriptionOnlyFooter: some View {
@@ -373,10 +434,10 @@ struct SetupView: View {
   }
 
   private func handleBegin() {
-    if routine.requiresAcknowledgement {
+    if activeRoutine.requiresAcknowledgement {
       showingSafetyGate = true
     } else {
-      onBegin(routine)
+      onBegin(activeRoutine, selectedDuration)
     }
   }
 
@@ -396,7 +457,7 @@ struct SetupView: View {
             .lineSpacing(4)
             .fixedSize(horizontal: false, vertical: true)
 
-          if let note = routine.safetyNote {
+          if let note = activeRoutine.safetyNote {
             Text(note)
               .font(BreatheFont.utility(13, weight: .light))
               .foregroundStyle(scheme.muted)
@@ -411,7 +472,7 @@ struct SetupView: View {
       VStack(spacing: 14) {
         Button {
           showingSafetyGate = false
-          onBegin(routine)
+          onBegin(activeRoutine, selectedDuration)
         } label: {
           Text("I understand — begin")
             .font(BreatheFont.display(18, weight: .regular, italic: true))

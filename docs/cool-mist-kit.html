@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Plume — Cool Mist Kit</title>
+</head>
+<body style="margin:0;background:#e9e6df;padding:32px 24px 76px;">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=Manrope:wght@400;500;600&display=swap');
+*{box-sizing:border-box;}
+.kt{font-family:"Manrope",system-ui,sans-serif;max-width:1000px;margin:0 auto;color:#22303b;}
+.kt-eyebrow{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:#7d8794;font-weight:500;}
+.kt-h1{font-family:"Fraunces",serif;font-style:italic;font-weight:300;font-size:clamp(32px,5vw,50px);letter-spacing:-.01em;margin:4px 0 6px;}
+.kt-intro{font-size:14px;color:#5a6671;max-width:64ch;line-height:1.6;margin:0 0 26px;}
+.kt-stage{display:grid;grid-template-columns:300px 1fr;gap:34px;align-items:start;}
+@media(max-width:720px){.kt-stage{grid-template-columns:1fr;justify-items:center;}}
+
+/* ---------- phone mockup ---------- */
+.phone{width:300px;height:624px;border-radius:42px;background:var(--paper);position:relative;overflow:hidden;
+ box-shadow:0 2px 4px rgba(0,0,0,.16),0 26px 60px rgba(0,0,0,.26);border:1px solid rgba(0,0,0,.10);}
+.ph-status{display:flex;justify-content:space-between;align-items:center;padding:14px 26px 0;font-size:12px;font-weight:600;color:var(--ink);}
+.ph-status .dots{display:flex;gap:4px;align-items:center;opacity:.8;}
+.ph-status .dots i{width:13px;height:9px;border-radius:2px;background:var(--ink);display:inline-block;}
+.ph-top{display:flex;justify-content:space-between;align-items:baseline;padding:20px 24px 0;}
+.ph-name{font-family:"Fraunces",serif;font-style:italic;font-weight:400;font-size:17px;color:var(--ink);}
+.ph-time{font-size:11px;font-weight:500;letter-spacing:.21em;text-transform:uppercase;color:var(--muted);font-variant-numeric:tabular-nums;}
+.ph-prog{height:1px;margin:14px 24px 0;background:var(--track);position:relative;}
+.ph-prog b{position:absolute;left:0;top:0;height:100%;background:var(--accent);width:42%;}
+.ph-orbwrap{position:absolute;left:0;right:0;top:206px;display:flex;flex-direction:column;align-items:center;}
+.ph-orb{position:relative;width:230px;height:230px;display:flex;align-items:center;justify-content:center;}
+.ph-ring{position:absolute;width:208px;height:208px;border-radius:50%;border:1px solid var(--ring);box-sizing:border-box;}
+.ph-ring::after{content:"";position:absolute;inset:18px;border-radius:50%;border:1px solid var(--ink);opacity:.30;}
+.ph-halo{position:absolute;width:176px;height:176px;border-radius:50%;background:var(--ink);filter:blur(26px);will-change:transform,opacity;}
+.ph-sphere{position:absolute;width:170px;height:170px;border-radius:50%;background:var(--sphere);will-change:transform,opacity;}
+.ph-num{position:absolute;width:172px;height:172px;display:grid;place-items:center;}
+.ph-num span{grid-area:1/1;font-family:"Fraunces",serif;font-weight:200;font-size:80px;line-height:1;font-variant-numeric:tabular-nums;}
+.ph-phase{margin-top:18px;font-size:12px;letter-spacing:.42em;text-transform:uppercase;color:var(--muted);}
+.ph-ctrl{position:absolute;left:24px;right:24px;bottom:30px;display:flex;gap:10px;}
+.ph-ctrl button{flex:1;height:50px;border-radius:26px;font-family:"Manrope",sans-serif;font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;cursor:default;}
+.ph-ghost{background:transparent;border:1px solid var(--ghost);color:var(--ink);}
+.ph-prim{background:var(--ink);border:0;color:var(--paper);flex:1.3;}
+
+/* ---------- kit panel ---------- */
+.kit{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:18px;padding:20px 22px;box-shadow:0 1px 2px rgba(0,0,0,.05),0 12px 30px rgba(0,0,0,.07);}
+.kit h3{font-family:"Fraunces",serif;font-style:italic;font-weight:400;font-size:18px;margin:0 0 2px;color:#22303b;}
+.kit .sub{font-size:12px;color:#7d8794;margin:0 0 16px;}
+.dial{margin:0 0 14px;}
+.dial .lab{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;}
+.dial .lab b{font-weight:500;color:#3a4853;}
+.dial .lab em{font-style:normal;color:#7d8794;font-variant-numeric:tabular-nums;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:3px;background:#d7d3cb;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:1px solid #b9b4aa;box-shadow:0 1px 3px rgba(0,0,0,.18);cursor:pointer;}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:1px solid #b9b4aa;cursor:pointer;}
+.seg{display:flex;gap:6px;margin-bottom:16px;}
+.seg button{flex:1;font-family:"Manrope",sans-serif;font-size:12px;font-weight:500;padding:7px 0;border-radius:9px;border:1px solid #d7d3cb;background:#faf9f6;color:#5a6671;cursor:pointer;}
+.seg button.on{border-color:#22303b;background:#22303b;color:#fff;}
+.pal{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0 4px;}
+.pal .s i{display:block;height:40px;border-radius:9px;border:1px solid rgba(0,0,0,.12);}
+.pal .s b{display:block;font-size:11px;color:#3a4853;margin-top:5px;font-weight:500;}
+.pal .s em{display:block;font-size:11px;color:#9a958c;font-style:normal;font-variant-numeric:tabular-nums;}
+.aa{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#7d8794;margin-top:12px;}
+.aa span b{font-weight:600;font-variant-numeric:tabular-nums;}
+.aa .ok{color:#2f7d4f;}.aa .no{color:#b4453a;}
+.copy{margin-top:14px;font-size:11px;color:#9a958c;font-variant-numeric:tabular-nums;line-height:1.6;word-break:break-all;}
+.txg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+.txg button{font-family:"Manrope",sans-serif;font-size:11px;font-weight:500;padding:6px 9px;border-radius:9px;border:1px solid #d7d3cb;background:#faf9f6;color:#5a6671;cursor:pointer;}
+.txg button.on{border-color:#22303b;background:#22303b;color:#fff;}
+.txd{font-size:11px;color:#9a958c;line-height:1.45;margin:0 0 14px;min-height:15px;}
+</style>
+
+<div class="kt">
+  <div class="kt-eyebrow">Plume · cool mist · live kit</div>
+  <div class="kt-h1">Tune the breathing screen</div>
+  <p class="kt-intro">The real session screen on the left, every colour driven by the dials on the right. Move them and the orb, type, progress and controls all respond. The neutral dial cools the page itself; pigment drives the accent; the accent-shift lets the signal hue drift off the base. Day/Night flips it light or dark. Everything stays WCAG-checked live.</p>
+
+  <div class="kt-stage">
+    <div class="phone" id="phone">
+      <div class="ph-status"><span id="clock">9:41</span><span class="dots"><i></i><i></i><i style="width:18px"></i></span></div>
+      <div class="ph-top"><span class="ph-name">Coherent</span><span class="ph-time" id="ptime">0:48 · 5:00</span></div>
+      <div class="ph-prog"><b id="pbar"></b></div>
+      <div class="ph-orbwrap">
+        <div class="ph-orb">
+          <div class="ph-ring"></div>
+          <div class="ph-halo" id="halo"></div>
+          <div class="ph-sphere" id="sphere"></div>
+          <div class="ph-num"><span id="nink">4</span><span id="ntop">4</span></div>
+        </div>
+        <div class="ph-phase" id="phase">Inhale</div>
+      </div>
+      <div class="ph-ctrl">
+        <button class="ph-ghost">Restart</button>
+        <button class="ph-prim" id="primbtn">Pause</button>
+        <button class="ph-ghost">End</button>
+      </div>
+    </div>
+
+    <div class="kit">
+      <h3>Colour dials</h3>
+      <p class="sub">Cool mist · OKLCH, gamut-mapped</p>
+      <div class="seg" id="mode"></div>
+      <div class="dial"><div class="lab"><b>Base hue</b><em id="vh"></em></div><input id="dh" type="range" min="150" max="320" step="1"></div>
+      <div class="dial"><div class="lab"><b>Paper</b><em id="vp"></em></div><input id="dp" type="range" min="0" max="100" step="1"></div>
+      <div class="dial"><div class="lab"><b>Pigment (accent)</b><em id="vg"></em></div><input id="dg" type="range" min="0.03" max="0.15" step="0.005"></div>
+      <div class="dial"><div class="lab"><b>Neutral cool</b><em id="vn"></em></div><input id="dn" type="range" min="0" max="0.09" step="0.003"></div>
+      <div class="dial"><div class="lab"><b>Accent shift</b><em id="va"></em></div><input id="da" type="range" min="-60" max="60" step="1"></div>
+
+      <div class="dial" style="margin-bottom:6px"><div class="lab"><b>Texture</b><em id="vtx">off</em></div></div>
+      <div class="txg" id="texlist"></div>
+      <div class="txd" id="texdesc"></div>
+      <div class="dial"><div class="lab"><b>Extremity</b><em id="vex">50%</em></div><input id="dex" type="range" min="0" max="100" step="1" value="50"></div>
+      <div class="pal" id="pal"></div>
+      <div class="aa" id="aa"></div>
+      <div class="copy" id="copy"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TEXTURES=[{"id":"grain","name":"Paper grain","desc":"A fine, uniform tooth of fiber that sits in the paper rather than on it - the barely-there default that survives on both light and deep paper.","tpl":"url(\"data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='140'%20height='140'%3E%3Cfilter%20id='g'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.85'%20numOctaves='2'%20stitchTiles='stitch'%20result='n'/%3E%3CfeColorMatrix%20in='n'%20type='matrix'%20values='0%200%200%200.6%200%200%200%200%200.6%200%200%200%200%200.6%200%200%200%200%200%201'/%3E%3C/filter%3E%3Crect%20width='100%25'%20height='100%25'%20filter='url(%23g)'%20opacity='{A}'/%3E%3C/svg%3E\") 0 0 / 140px 140px repeat","maxA":0.16},{"id":"fibre","name":"Cotton fibre","desc":"Soft vertical rag strands that make the paper feel hand-pulled rather than printed.","tpl":"url(\"data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%27150%27%20height=%27150%27%3E%3Cfilter%20id=%27f%27%20x=%270%25%27%20y=%270%25%27%20width=%27100%25%27%20height=%27100%25%27%3E%3CfeTurbulence%20type=%27fractalNoise%27%20baseFrequency=%270.015%200.85%27%20numOctaves=%272%27%20seed=%274%27%20stitchTiles=%27stitch%27%20result=%27n%27/%3E%3CfeColorMatrix%20in=%27n%27%20type=%27matrix%27%20values=%270%200%200%200%200%20%200%200%200%200%200%20%200%200%200%200%200%20%200.34%200.34%200.34%200%200%27%20result=%27a%27/%3E%3CfeComponentTransfer%20in=%27a%27%20result=%27a2%27%3E%3CfeFuncA%20type=%27gamma%27%20amplitude=%271%27%20exponent=%272.2%27%20offset=%270%27/%3E%3C/feComponentTransfer%3E%3CfeFlood%20flood-color=%27rgb({INK})%27%20flood-opacity=%27{A}%27%20result=%27c%27/%3E%3CfeComposite%20in=%27c%27%20in2=%27a2%27%20operator=%27in%27/%3E%3C/filter%3E%3Crect%20width=%27100%25%27%20height=%27100%25%27%20filter=%27url(%23f)%27/%3E%3C/svg%3E\") 0 0 / 150px 150px repeat","maxA":0.14},{"id":"linen","name":"Linen weave","desc":"Two soft crosshatched thread families at fine and coarse pitch read as a quiet woven textile, the ink colour keeping it calm over both light and deep paper.","tpl":"repeating-linear-gradient(90deg, transparent 0, rgba({INK},{A}) 1.5px, transparent 3px), repeating-linear-gradient(0deg, transparent 0, rgba({INK},{A}) 1.5px, transparent 3px), repeating-linear-gradient(90deg, transparent 0, rgba({INK},{A}) 3px, transparent 6px), repeating-linear-gradient(0deg, transparent 0, rgba({INK},{A}) 3px, transparent 6px)","maxA":0.09},{"id":"speckle","name":"Stone speckle","desc":"Sparse mineral flecks drift across the page like specks in sandstone or dry fresco.","tpl":"url(\"data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%27220%27%20height=%27220%27%3E%3Cfilter%20id=%27s%27%20x=%270%27%20y=%270%27%20width=%27100%25%27%20height=%27100%25%27%3E%3CfeTurbulence%20type=%27turbulence%27%20baseFrequency=%270.5%27%20numOctaves=%273%27%20seed=%277%27%20stitchTiles=%27stitch%27%20result=%27n%27/%3E%3CfeColorMatrix%20in=%27n%27%20type=%27matrix%27%20values=%270%200%200%200%200%200%200%200%200%200%200%200%200%200%200%200.34%200.34%200.34%200%200%27%20result=%27a%27/%3E%3CfeComponentTransfer%20in=%27a%27%20result=%27sp%27%3E%3CfeFuncA%20type=%27gamma%27%20amplitude=%271%27%20exponent=%273.5%27%20offset=%270%27/%3E%3C/feComponentTransfer%3E%3CfeFlood%20flood-color=%27rgb({INK})%27%20result=%27ink%27/%3E%3CfeComposite%20in=%27ink%27%20in2=%27sp%27%20operator=%27in%27/%3E%3C/filter%3E%3Crect%20x=%270%27%20y=%270%27%20width=%27220%27%20height=%27220%27%20filter=%27url(%23s)%27%20opacity=%27{A}%27/%3E%3C/svg%3E\") 0 0 / 220px 220px repeat","maxA":0.3},{"id":"haze","name":"Cool haze","desc":"A slow tonal drift of cool mist settling into the far corners, with no edges to catch the eye.","tpl":"radial-gradient(120% 120% at 12% 8%, rgba({INK}, calc({A} * 0.85)) 0%, rgba({INK}, calc({A} * 0.28)) 30%, rgba({INK},0) 64%), radial-gradient(140% 140% at 90% 14%, rgba({INK}, calc({A} * 0.55)) 0%, rgba({INK},0) 58%), radial-gradient(150% 150% at 50% 108%, rgba({INK}, calc({A} * 0.5)) 0%, rgba({INK},0) 66%)","maxA":0.18},{"id":"halftone","name":"Halftone dots","desc":"A fine Risograph dot field tints the paper with tiny ink dots on a tight grid, reading as quiet print grain up close and even tone from a breath away.","tpl":"radial-gradient(circle at 50% 50%, rgba({INK},{A}) 0 0.75px, transparent 1.5px) 0 0 / 9px 9px, radial-gradient(circle at 50% 50%, rgba({INK},calc({A} * 0.5)) 0 0.65px, transparent 1.4px) 4.5px 4.5px / 9px 9px","maxA":0.13},{"id":"hatch","name":"Pen hatch","desc":"Fine diagonal pen lines at 135 degrees, etched and archival, each soft-edged stroke fading to nothing across the gap between it and the next.","tpl":"repeating-linear-gradient(135deg, rgba({INK},0) 0, rgba({INK},{A}) 1.4px, rgba({INK},{A}) 2.2px, rgba({INK},0) 3.6px, rgba({INK},0) 6px)","maxA":0.12},{"id":"vignette","name":"Edge shade","desc":"A soft shadow gathers at the corners and clears the center, settling the eye on the orb.","tpl":"radial-gradient(ellipse 80% 80% at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 48%, rgba(0,0,0,calc(0.04 * {A})) 64%, rgba(0,0,0,calc(0.16 * {A})) 80%, rgba(0,0,0,calc(0.42 * {A})) 92%, rgba(0,0,0,{A}) 100%)","maxA":0.28},{"id":"frost","name":"Frosted glass","desc":"Cold condensation: a fine cool-grey speckle under two soft pools of misted light.","tpl":"radial-gradient(140% 110% at 20% 14%, rgba(255,255,255,{A}) 0%, rgba(255,255,255,0) 60%), radial-gradient(120% 100% at 84% 90%, rgba(255,255,255,{A}) 0%, rgba(255,255,255,0) 58%), url(\"data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%27130%27%20height=%27130%27%3E%3Cfilter%20id=%27f%27%3E%3CfeTurbulence%20type=%27fractalNoise%27%20baseFrequency=%270.85%27%20numOctaves=%272%27%20stitchTiles=%27stitch%27/%3E%3CfeColorMatrix%20type=%27matrix%27%20values=%270%200%200%200%200.55%200%200%200%200%200.6%200%200%200%200%200.62%200%200%200%201%200%27/%3E%3C/filter%3E%3Crect%20width=%27100%25%27%20height=%27100%25%27%20filter=%27url(%23f)%27%20opacity=%27{A}%27/%3E%3C/svg%3E\") 0 0 / 130px 130px repeat","maxA":0.13},{"id":"concrete","name":"Plaster","desc":"Troweled fresco grain with soft, uneven ink-tinted cloud passes for architectural calm.","tpl":"url(\"data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%27220%27%20height=%27220%27%3E%3Cfilter%20id=%27p%27%3E%3CfeTurbulence%20type=%27fractalNoise%27%20baseFrequency=%270.65%27%20numOctaves=%274%27%20stitchTiles=%27stitch%27/%3E%3CfeColorMatrix%20type=%27saturate%27%20values=%270%27/%3E%3C/filter%3E%3Crect%20width=%27100%25%27%20height=%27100%25%27%20filter=%27url(%23p)%27%20opacity=%27{A}%27/%3E%3C/svg%3E\") 0 0 / 220px 220px repeat, radial-gradient(120% 90% at 22% 18%, rgba({INK},calc({A} * 0.5)), rgba({INK},0) 60%) no-repeat, radial-gradient(120% 90% at 82% 88%, rgba({INK},calc({A} * 0.4)), rgba({INK},0) 62%) no-repeat","maxA":0.16}];
+function oklabLin(L,a,b){const l=(L+0.3963377774*a+0.2158037573*b)**3,m=(L-0.1055613458*a-0.0638541728*b)**3,s=(L-0.0894841775*a-1.2914855480*b)**3;
+ return [4.0767416621*l-3.3077115913*m+0.2309699292*s, -1.2684380046*l+2.6097574011*m-0.3413193965*s, -0.0041960863*l-0.7034186147*m+1.7076147010*s];}
+function linAt(L,C,H){const h=H*Math.PI/180;return oklabLin(L,Math.cos(h)*C,Math.sin(h)*C);}
+function inG(L,C,H){const e=0.0008;return linAt(L,C,H).every(v=>v>=-e&&v<=1+e);}
+function clampC(L,C,H){if(inG(L,C,H))return C;let lo=0,hi=C;for(let i=0;i<28;i++){const m=(lo+hi)/2;if(inG(L,m,H))lo=m;else hi=m;}return lo;}
+function rgbArr(L,C,H){const lin=linAt(L,clampC(L,C,H),H);return lin.map(v=>{v=Math.max(0,Math.min(1,v));v=v<=0.0031308?12.92*v:1.055*Math.pow(v,1/2.4)-0.055;return Math.round(Math.max(0,Math.min(1,v))*255);});}
+const hexOf=(L,C,H)=>'#'+rgbArr(L,C,H).map(v=>v.toString(16).padStart(2,'0')).join('');
+const rgbaOf=(L,C,H,a)=>{const r=rgbArr(L,C,H);return 'rgba('+r[0]+','+r[1]+','+r[2]+','+a+')';};
+function lumHex(h){h=h.replace('#','');const c=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)/255).map(v=>v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4);return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2];}
+function cr(a,b){const x=lumHex(a),y=lumHex(b),hi=Math.max(x,y),lo=Math.min(x,y);return (hi+0.05)/(lo+0.05);}
+
+let S={mode:'day',h:225,p:0.5,g:0.10,n:0.055,a:0,tex:'grain',ex:0.5};
+function L(role){ // role lightness by mode
+ if(S.mode==='day'){return {paper:0.875+0.075*S.p, ink:0.30, accent:0.60, muted:0.50}[role];}
+ return {paper:0.15+0.12*S.p, ink:0.90, accent:0.66, muted:0.64}[role];
+}
+function palette(){
+ const H=S.h, aH=((H+S.a)%360+360)%360;
+ const paper=hexOf(L('paper'), S.n*0.45, H);
+ const ink  =hexOf(L('ink'),   S.n*0.85, H);
+ const muted=hexOf(L('muted'), S.n, H);
+ const accent=hexOf(L('accent'), S.g, aH);
+ return {paper,ink,muted,accent,aH,
+   ringRGBA:rgbaOf(L('ink'),S.n*0.85,H,0.42), trackRGBA:rgbaOf(L('ink'),S.n*0.85,H,0.14),
+   ghostRGBA:rgbaOf(L('ink'),S.n*0.85,H,0.28),
+   inkL:L('ink')};
+}
+function sphereGrad(P){const il=P.inkL; // radial built off ink
+ const c1=hexOf(Math.min(0.97,il+0.14), S.n*0.7, S.h);
+ const c2=P.ink;
+ const c3=hexOf(Math.max(0.06,il-0.10), S.n*0.9, S.h);
+ return 'radial-gradient(circle at 38% 32%, '+c1+', '+c2+' 60%, '+c3+')';}
+
+const ph=document.getElementById('phone');
+function apply(){const P=palette();
+ ph.style.setProperty('--paper',P.paper);ph.style.setProperty('--ink',P.ink);
+ ph.style.setProperty('--muted',P.muted);ph.style.setProperty('--accent',P.accent);
+ ph.style.setProperty('--ring',P.ringRGBA);ph.style.setProperty('--track',P.trackRGBA);
+ ph.style.setProperty('--ghost',P.ghostRGBA);ph.style.setProperty('--sphere',sphereGrad(P));
+ var ink3=rgbArr(L('ink'),S.n*0.85,S.h).join(',');
+ var ct=TEXTURES.filter(function(x){return x.id===S.tex;})[0];
+ var texbg=(!ct)?'':ct.tpl.replace(/\{A\}/g,(S.ex*ct.maxA).toFixed(3)).replace(/\{INK\}/g,ink3);
+ ph.style.background=(texbg?texbg+', ':'')+P.paper;
+ document.getElementById('halo').style.background=P.ink;
+ document.getElementById('nink').style.color=P.ink;
+ document.getElementById('ntop').style.color=P.paper;
+ // readouts
+ document.getElementById('vh').textContent=Math.round(S.h)+'°';
+ document.getElementById('vp').textContent=(L('paper')).toFixed(2)+' L';
+ document.getElementById('vg').textContent=S.g.toFixed(3)+' C';
+ document.getElementById('vn').textContent=S.n.toFixed(3)+' C';
+ document.getElementById('va').textContent=(S.a>0?'+':'')+S.a+'°';
+ // palette swatches
+ const roles=[['paper',P.paper],['ink',P.ink],['accent',P.accent],['muted',P.muted]];
+ document.getElementById('pal').innerHTML=roles.map(r=>'<div class="s"><i style="background:'+r[1]+'"></i><b>'+r[0]+'</b><em>'+r[1].toUpperCase()+'</em></div>').join('');
+ // contrast
+ const ci=cr(P.ink,P.paper),cm=cr(P.muted,P.paper),ca=cr(P.accent,P.paper);
+ const badge=(n,v,t)=>'<span>'+n+' <b class="'+(v>=t?'ok':'no')+'">'+v.toFixed(1)+'</b>:1 '+(v>=t?'✓':'✗')+'</span>';
+ document.getElementById('aa').innerHTML=badge('ink',ci,7)+badge('muted',cm,4.5)+badge('accent',ca,3);
+ document.getElementById('copy').textContent='paper '+P.paper+'  ink '+P.ink+'  accent '+P.accent+'  muted '+P.muted;
+}
+
+// ---- breathing clock (box 4·4·4·4) ----
+const PHASES=[{n:'Inhale',d:4,a:'in'},{n:'Hold',d:4,a:'hold'},{n:'Exhale',d:4,a:'out'},{n:'Hold',d:4,a:'rest'}];
+const CYCLE=PHASES.reduce((s,p)=>s+p.d,0);
+const REST=0.34;
+function frame(ts){const t=(ts/1000)%CYCLE;let acc=0,ph0=PHASES[0],into=0;
+ for(const p of PHASES){if(t<acc+p.d){ph0=p;into=t-acc;break;}acc+=p.d;}
+ const f=into/ph0.d; let scale,fill;
+ if(ph0.a==='in'){const e=0.5-0.5*Math.cos(Math.PI*f);scale=REST+(1-REST)*e;fill=Math.min(1,f/0.12);}
+ else if(ph0.a==='hold'){scale=1;fill=1;}
+ else if(ph0.a==='out'){const e=0.5-0.5*Math.cos(Math.PI*f);scale=1-(1-REST)*e;fill=Math.max(0,1-Math.min(1,f/0.55));}
+ else{scale=REST;fill=0;}
+ const sp=document.getElementById('sphere');sp.style.transform='scale('+scale.toFixed(3)+')';sp.style.opacity=fill.toFixed(3);
+ const ha=document.getElementById('halo');const hb=(S.mode==='day'?0.18:0.55);ha.style.transform='scale('+(scale*1.05).toFixed(3)+')';ha.style.opacity=(hb*fill*(0.4+0.6*((scale-REST)/(1-REST)))).toFixed(3);
+ document.getElementById('ntop').style.opacity=fill.toFixed(3);
+ const cd=Math.max(1,Math.ceil(ph0.d-into));document.getElementById('nink').textContent=cd;document.getElementById('ntop').textContent=cd;
+ document.getElementById('phase').textContent=ph0.n;
+ const prog=(t/CYCLE);document.getElementById('pbar').style.width=(20+prog*60).toFixed(1)+'%';
+ requestAnimationFrame(frame);}
+
+// ---- wire dials ----
+function bindRange(id,key,fn){const el=document.getElementById(id);el.value=S[key];el.oninput=()=>{S[key]=parseFloat(el.value);(fn||apply)();};}
+document.getElementById('mode').innerHTML='<button data-m="day">Day</button><button data-m="night">Night</button>';
+[...document.getElementById('mode').children].forEach(b=>b.onclick=()=>{S.mode=b.dataset.m;document.getElementById('primbtn').textContent='Pause';
+ [...document.getElementById('mode').children].forEach(x=>x.classList.toggle('on',x.dataset.m===S.mode));apply();});
+bindRange('dh','h');bindRange('dg','g');bindRange('dn','n');bindRange('da','a');
+const dp=document.getElementById('dp');dp.value=S.p*100;dp.oninput=()=>{S.p=dp.value/100;apply();};
+document.querySelector('#mode button[data-m="day"]').classList.add('on');
+var TXALL=[{id:'none',name:'None'}].concat(TEXTURES.map(function(t){return {id:t.id,name:t.name};}));
+var txg=document.getElementById('texlist');
+txg.innerHTML=TXALL.map(function(t){return '<button data-t="'+t.id+'">'+t.name+'</button>';}).join('');
+function updTex(){var ct=TEXTURES.filter(function(x){return x.id===S.tex;})[0];
+ document.getElementById('vtx').textContent=ct?ct.name:'off';
+ document.getElementById('vex').textContent=Math.round(S.ex*100)+'%';
+ document.getElementById('texdesc').textContent=ct?ct.desc:'No texture — clean paper.';
+ [].forEach.call(txg.children,function(x){x.classList.toggle('on',x.dataset.t===S.tex);});}
+[].forEach.call(txg.children,function(b){b.onclick=function(){S.tex=b.dataset.t;updTex();apply();};});
+var dex=document.getElementById('dex');dex.oninput=function(){S.ex=dex.value/100;updTex();apply();};
+updTex();
+apply();requestAnimationFrame(frame);
+</script>
+</body>
+</html>
