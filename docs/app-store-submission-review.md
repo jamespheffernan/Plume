@@ -89,3 +89,7 @@ Every in-repo item is committed on `session-feel-polish`, each Codex-reviewed (g
 | `73cdb54` | "Wim Hof" → "Power Breath" (item #7) |
 
 **Still yours (can't be closed from the repo):** the App Store Connect listing — screenshots, support URL, privacy-policy URL, category, age rating, and the "Data Not Collected" privacy label (must-do items #1–5). Optional: eyeball the variable-font weights (item #11).
+
+## Submitted (2026-08-24)
+
+Build 202608241407 (Xcode 26.6, 17F113) uploaded via `scripts/upload_testflight.sh`, attached to version 1.0 through the App Store Connect API, content-rights declaration and App Review contact completed, and submitted: reviewSubmission `4324310b-4b3a-497e-a05d-e57163659c2e`, state WAITING_FOR_REVIEW at 15:23 UTC. Listing (subtitle, promo, description, keywords, URLs, five 6.9-inch screenshots) completed the same day.
