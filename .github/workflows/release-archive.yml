@@ -1,0 +1,64 @@
+name: Build release archive
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: App Store build number
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  archive:
+    runs-on: macos-26
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Select the accepted Xcode release
+        run: |
+          sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+          sw_vers
+          xcodebuild -version
+          xcodebuild -showsdks
+
+      - name: Build unsigned App Store archive
+        run: |
+          xcodebuild \
+            -project BreatheClock.xcodeproj \
+            -scheme BreatheClock \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Plume.xcarchive" \
+            CURRENT_PROJECT_VERSION="${{ inputs.build_number }}" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            clean archive
+
+      - name: Verify archive toolchain metadata
+        run: |
+          APP="$RUNNER_TEMP/Plume.xcarchive/Products/Applications/Plume.app"
+          /usr/libexec/PlistBuddy -c 'Print:CFBundleShortVersionString' "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print:CFBundleVersion' "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print:BuildMachineOSBuild' "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print:DTXcodeBuild' "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print:DTSDKBuild' "$APP/Info.plist"
+
+      - name: Package archive
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            "$RUNNER_TEMP/Plume.xcarchive" \
+            "$RUNNER_TEMP/Plume.xcarchive.zip"
+
+      - name: Upload archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: plume-${{ inputs.build_number }}-archive
+          path: ${{ runner.temp }}/Plume.xcarchive.zip
+          if-no-files-found: error
+          retention-days: 7
