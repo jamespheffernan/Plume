@@ -23,7 +23,10 @@ fi
 
 export DEVELOPER_DIR="$XCODE_DEVELOPER_DIR"
 
-"$ROOT_DIR/scripts/verify_release_toolchain.sh" --developer-dir "$XCODE_DEVELOPER_DIR"
+PREBUILT_ARCHIVE_PATH="${PLUME_PREBUILT_ARCHIVE_PATH:-}"
+if [[ -z "$PREBUILT_ARCHIVE_PATH" ]]; then
+  "$ROOT_DIR/scripts/verify_release_toolchain.sh" --developer-dir "$XCODE_DEVELOPER_DIR"
+fi
 
 SIGNING_ROOT="$HOME/.appstoreconnect/plume-signing"
 if [[ -z "${PLUME_SIGNING_DIR:-}" ]]; then
@@ -35,7 +38,7 @@ if [[ -z "${PLUME_SIGNING_DIR:-}" || ! -d "$PLUME_SIGNING_DIR" ]]; then
   exit 2
 fi
 
-KEYCHAIN="$PLUME_SIGNING_DIR/plume-build.keychain-db"
+KEYCHAIN="${PLUME_KEYCHAIN_PATH:-$PLUME_SIGNING_DIR/plume-build.keychain-db}"
 PROFILE_SRC="$PLUME_SIGNING_DIR/Plume_App_Store.mobileprovision"
 PROFILE_PLIST="$PLUME_SIGNING_DIR/Plume_App_Store.plist"
 
@@ -106,7 +109,7 @@ fi
 STAMP="$(date +%Y%m%d-%H%M%S)"
 OUT_DIR="${PLUME_OUTPUT_DIR:-$ROOT_DIR/build/testflight/$STAMP}"
 BUILD_NUMBER="${PLUME_BUILD_NUMBER:-$(date +%Y%m%d%H%M)}"
-ARCHIVE_PATH="$OUT_DIR/Plume.xcarchive"
+ARCHIVE_PATH="${PREBUILT_ARCHIVE_PATH:-$OUT_DIR/Plume.xcarchive}"
 EXPORT_DIR="$OUT_DIR/export"
 EXPORT_OPTIONS="$OUT_DIR/ExportOptions.plist"
 
@@ -140,23 +143,32 @@ cat > "$EXPORT_OPTIONS" <<EOF
 </plist>
 EOF
 
-rm -rf "$ARCHIVE_PATH" "$EXPORT_DIR"
+rm -rf "$EXPORT_DIR"
 
-xcodebuild \
-  -project "$PROJECT" \
-  -scheme "$SCHEME" \
-  -configuration Release \
-  -destination 'generic/platform=iOS' \
-  -archivePath "$ARCHIVE_PATH" \
-  archive \
-  CODE_SIGN_STYLE=Manual \
-  DEVELOPMENT_TEAM="$TEAM_ID" \
-  CODE_SIGN_IDENTITY="$IDENTITY" \
-  PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
-  PROVISIONING_PROFILE="$PROFILE_UUID" \
-  CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
-  OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN" \
-  | tee "$OUT_DIR/archive.log"
+if [[ -z "$PREBUILT_ARCHIVE_PATH" ]]; then
+  rm -rf "$ARCHIVE_PATH"
+  xcodebuild \
+    -project "$PROJECT" \
+    -scheme "$SCHEME" \
+    -configuration Release \
+    -destination 'generic/platform=iOS' \
+    -archivePath "$ARCHIVE_PATH" \
+    archive \
+    CODE_SIGN_STYLE=Manual \
+    DEVELOPMENT_TEAM="$TEAM_ID" \
+    CODE_SIGN_IDENTITY="$IDENTITY" \
+    PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+    PROVISIONING_PROFILE="$PROFILE_UUID" \
+    CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+    OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN" \
+    | tee "$OUT_DIR/archive.log"
+else
+  [[ -d "$ARCHIVE_PATH" ]] || {
+    echo "Prebuilt archive is missing: $ARCHIVE_PATH" >&2
+    exit 2
+  }
+  echo "Using prebuilt archive: $ARCHIVE_PATH"
+fi
 
 "$ROOT_DIR/scripts/verify_release_toolchain.sh" --archive "$ARCHIVE_PATH" \
   | tee "$OUT_DIR/toolchain.log"
@@ -169,8 +181,16 @@ xcodebuild \
   | tee "$OUT_DIR/export.log"
 
 IPA="$EXPORT_DIR/Plume.ipa"
+xcrun altool \
+  --validate-app \
+  --type ios \
+  --file "$IPA" \
+  --apiKey "$API_KEY_ID" \
+  --apiIssuer "$API_ISSUER_ID" \
+  | tee "$OUT_DIR/validation.log"
+
 if [[ "${PLUME_SKIP_UPLOAD:-}" == "1" ]]; then
-  echo "Built IPA without upload: $IPA"
+  echo "Built and validated IPA without upload: $IPA"
   exit 0
 fi
 
