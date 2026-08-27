@@ -14,20 +14,7 @@ API_KEY_ID="${APPSTORE_CONNECT_API_KEY_ID:-V6Z64QFY9P}"
 API_ISSUER_ID="${APPSTORE_CONNECT_API_ISSUER_ID:-6344e0a2-d5a0-42f2-be15-bca31eeb9a13}"
 API_KEY_PATH="${APPSTORE_CONNECT_API_PRIVATE_KEY_PATH:-$HOME/.appstoreconnect/private_keys/AuthKey_${API_KEY_ID}.p8}"
 
-XCODE_DEVELOPER_DIR="${DEVELOPER_DIR:-}"
-if [[ -z "$XCODE_DEVELOPER_DIR" ]]; then
-  SELECTED_DEVELOPER_DIR="$(xcode-select -p 2>/dev/null || true)"
-  if [[ -n "$SELECTED_DEVELOPER_DIR" && -x "$SELECTED_DEVELOPER_DIR/usr/bin/xcodebuild" ]]; then
-    XCODE_DEVELOPER_DIR="$SELECTED_DEVELOPER_DIR"
-  else
-    for CANDIDATE in /Applications/Xcode.app/Contents/Developer /Applications/Xcode-beta.app/Contents/Developer; do
-      if [[ -x "$CANDIDATE/usr/bin/xcodebuild" ]]; then
-        XCODE_DEVELOPER_DIR="$CANDIDATE"
-        break
-      fi
-    done
-  fi
-fi
+XCODE_DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
 
 if [[ -z "$XCODE_DEVELOPER_DIR" || ! -x "$XCODE_DEVELOPER_DIR/usr/bin/xcodebuild" ]]; then
   echo "No usable Xcode developer directory found. Set DEVELOPER_DIR to an Xcode.app Contents/Developer path." >&2
@@ -35,6 +22,8 @@ if [[ -z "$XCODE_DEVELOPER_DIR" || ! -x "$XCODE_DEVELOPER_DIR/usr/bin/xcodebuild
 fi
 
 export DEVELOPER_DIR="$XCODE_DEVELOPER_DIR"
+
+"$ROOT_DIR/scripts/verify_release_toolchain.sh" --developer-dir "$XCODE_DEVELOPER_DIR"
 
 SIGNING_ROOT="$HOME/.appstoreconnect/plume-signing"
 if [[ -z "${PLUME_SIGNING_DIR:-}" ]]; then
@@ -63,17 +52,6 @@ fi
 if [[ ! -f "$API_KEY_PATH" ]]; then
   echo "Missing App Store Connect API key: $API_KEY_PATH" >&2
   exit 2
-fi
-
-XCODE_CONTENTS_DIR="$(cd "$XCODE_DEVELOPER_DIR/.." && pwd)"
-XCODE_BUILD="$(/usr/libexec/PlistBuddy -c 'Print ProductBuildVersion' "$XCODE_CONTENTS_DIR/version.plist")"
-if [[ "$XCODE_BUILD" == "27A5194q" && "${PLUME_ALLOW_UNSUPPORTED_XCODE:-}" != "1" ]]; then
-  cat >&2 <<'MSG'
-Installed Xcode is 27A5194q, which App Store Connect rejected for upload.
-Install Xcode 26.6 (17F113) or Xcode 27 beta 2 (27A5209h), then rerun this script.
-Set PLUME_ALLOW_UNSUPPORTED_XCODE=1 only if Apple starts accepting this build again.
-MSG
-  exit 3
 fi
 
 security cms -D -i "$PROFILE_SRC" > "$PROFILE_PLIST"
@@ -179,6 +157,9 @@ xcodebuild \
   CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
   OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN" \
   | tee "$OUT_DIR/archive.log"
+
+"$ROOT_DIR/scripts/verify_release_toolchain.sh" --archive "$ARCHIVE_PATH" \
+  | tee "$OUT_DIR/toolchain.log"
 
 xcodebuild \
   -exportArchive \

@@ -18,12 +18,22 @@ jobs:
   archive:
     runs-on: macos-26
     timeout-minutes: 30
-    env:
-      BUILD_NUMBER: ${{ inputs.build_number || '202608262112' }}
 
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+
+      - name: Set build number
+        env:
+          REQUESTED_BUILD_NUMBER: ${{ inputs.build_number }}
+        run: |
+          if [[ -n "$REQUESTED_BUILD_NUMBER" ]]; then
+            BUILD_NUMBER="$REQUESTED_BUILD_NUMBER"
+          else
+            BUILD_NUMBER="$(date -u +%Y%m%d%H%M)"
+          fi
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "Build number: $BUILD_NUMBER"
 
       - name: Select the accepted Xcode release
         run: |
@@ -31,6 +41,8 @@ jobs:
           sw_vers
           xcodebuild -version
           xcodebuild -showsdks
+          scripts/verify_release_toolchain.sh \
+            --developer-dir /Applications/Xcode_26.6.app/Contents/Developer
 
       - name: Build unsigned App Store archive
         run: |
@@ -47,6 +59,7 @@ jobs:
 
       - name: Verify archive toolchain metadata
         run: |
+          scripts/verify_release_toolchain.sh --archive "$RUNNER_TEMP/Plume.xcarchive"
           APP="$RUNNER_TEMP/Plume.xcarchive/Products/Applications/Plume.app"
           /usr/libexec/PlistBuddy -c 'Print:CFBundleShortVersionString' "$APP/Info.plist"
           /usr/libexec/PlistBuddy -c 'Print:CFBundleVersion' "$APP/Info.plist"
@@ -63,7 +76,7 @@ jobs:
       - name: Upload archive
         uses: actions/upload-artifact@v4
         with:
-          name: plume-${{ env.BUILD_NUMBER }}-archive
+          name: plume-release-archive
           path: ${{ runner.temp }}/Plume.xcarchive.zip
           if-no-files-found: error
           retention-days: 7
