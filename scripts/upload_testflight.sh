@@ -38,14 +38,8 @@ if [[ -z "${PLUME_SIGNING_DIR:-}" || ! -d "$PLUME_SIGNING_DIR" ]]; then
   exit 2
 fi
 
-KEYCHAIN="${PLUME_KEYCHAIN_PATH:-$PLUME_SIGNING_DIR/plume-build.keychain-db}"
 PROFILE_SRC="$PLUME_SIGNING_DIR/Plume_App_Store.mobileprovision"
 PROFILE_PLIST="$PLUME_SIGNING_DIR/Plume_App_Store.plist"
-
-if [[ ! -f "$KEYCHAIN" ]]; then
-  echo "Missing build keychain: $KEYCHAIN" >&2
-  exit 2
-fi
 
 if [[ ! -f "$PROFILE_SRC" ]]; then
   echo "Missing App Store provisioning profile: $PROFILE_SRC" >&2
@@ -81,9 +75,45 @@ if [[ -z "$KEYCHAIN_PASSWORD" && -f "$PLUME_SIGNING_DIR/keychain-password.txt" ]
   KEYCHAIN_PASSWORD="$(<"$PLUME_SIGNING_DIR/keychain-password.txt")"
 fi
 
-if [[ -n "$KEYCHAIN_PASSWORD" ]]; then
-  security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+if [[ -z "$KEYCHAIN_PASSWORD" ]]; then
+  echo "Missing Plume build keychain password. Set PLUME_KEYCHAIN_PASSWORD or provide $PLUME_SIGNING_DIR/keychain-password.txt." >&2
+  exit 2
 fi
+
+if [[ -n "${PLUME_KEYCHAIN_PATH:-}" ]]; then
+  KEYCHAIN="$PLUME_KEYCHAIN_PATH"
+  if [[ ! -f "$KEYCHAIN" ]]; then
+    echo "Missing build keychain: $KEYCHAIN" >&2
+    exit 2
+  fi
+
+  if ! security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"; then
+    echo "The Plume keychain password could not unlock $KEYCHAIN." >&2
+    exit 2
+  fi
+else
+  KEYCHAIN=""
+  KEYCHAIN_CANDIDATES=("$PLUME_SIGNING_DIR/plume-build.keychain-db")
+  while IFS= read -r CANDIDATE; do
+    KEYCHAIN_CANDIDATES+=("$CANDIDATE")
+  done < <(find "$PLUME_SIGNING_DIR" -maxdepth 1 -type f -name 'plume-build.keychain-db.*' -print | sort -r)
+
+  for CANDIDATE in "${KEYCHAIN_CANDIDATES[@]}"; do
+    if [[ -f "$CANDIDATE" ]] \
+      && security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$CANDIDATE" >/dev/null 2>&1 \
+      && security find-identity -v -p codesigning "$CANDIDATE" | grep -Fq "$IDENTITY"; then
+      KEYCHAIN="$CANDIDATE"
+      break
+    fi
+  done
+
+  if [[ -z "$KEYCHAIN" ]]; then
+    echo "No build keychain in $PLUME_SIGNING_DIR could be unlocked with the saved Plume password and provide $IDENTITY." >&2
+    exit 2
+  fi
+fi
+
+echo "Using signing keychain: $KEYCHAIN"
 
 USER_KEYCHAINS=()
 while IFS= read -r USER_KEYCHAIN; do
