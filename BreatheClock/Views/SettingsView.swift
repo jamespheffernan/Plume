@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import AVFoundation
 
 struct SettingsView: View {
   let scheme: BreatheScheme
@@ -8,6 +9,10 @@ struct SettingsView: View {
   @Binding var hapticsEnabled: Bool
   @Binding var swellHapticsEnabled: Bool
   let onBack: () -> Void
+
+  @ObservedObject private var audio = AudioCuePlayer.shared
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.scenePhase) private var scenePhase
 
   var body: some View {
     ScrollView {
@@ -35,6 +40,15 @@ struct SettingsView: View {
             ForEach(AudioCue.allCases) { cue in
               audioRow(cue)
             }
+          }
+          Text("With sound on, breathing audio continues when your screen locks or you switch apps. With sound off, the session pauses. Haptics work while Plume is on screen.")
+            .font(BreatheFont.utility(12, weight: .light))
+            .foregroundStyle(scheme.muted)
+            .fixedSize(horizontal: false, vertical: true)
+          if let error = audio.playbackError {
+            Text(error)
+              .font(BreatheFont.utility(12, weight: .regular))
+              .foregroundStyle(scheme.ink)
           }
         }
 
@@ -103,8 +117,13 @@ struct SettingsView: View {
 
         settingsSection(title: "About", topPadding: 34) {
           VStack(spacing: 0) {
-            aboutRow("Version", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0")
-            aboutRow("Made in", value: "Cambridge")
+            aboutRow("Version", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1.0")
+            aboutRow("Made in", value: "Cambridge, UK")
+            Text("A Turf Terrace product")
+              .font(BreatheFont.display(14, weight: .regular, italic: true))
+              .foregroundStyle(scheme.ink)
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .padding(.top, 18)
           }
         }
       }
@@ -113,7 +132,21 @@ struct SettingsView: View {
     }
     .background(scheme.paper)
     .scrollIndicators(.hidden)
-    .animation(.easeInOut(duration: 0.4), value: scheme.id)
+    .animation(reduceMotion ? nil : .easeInOut(duration: 0.4), value: scheme.id)
+    .onDisappear { audio.stopPreview() }
+    .onChange(of: scenePhase) { _, phase in
+      if phase != .active { audio.stopPreview() }
+    }
+    .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification).receive(on: DispatchQueue.main)) { notification in
+      if (notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt) == AVAudioSession.InterruptionType.began.rawValue {
+        audio.stopPreview()
+      }
+    }
+    .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification).receive(on: DispatchQueue.main)) { notification in
+      if (notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt) == AVAudioSession.RouteChangeReason.oldDeviceUnavailable.rawValue {
+        audio.stopPreview()
+      }
+    }
   }
 
   private var topBar: some View {
@@ -157,9 +190,7 @@ struct SettingsView: View {
   private func audioRow(_ cue: AudioCue) -> some View {
     Button {
       audioCue = cue
-      if cue != .off {
-        AudioCuePlayer.shared.playBoxPreview(cue)
-      }
+      audio.playBoxPreview(cue)
     } label: {
       HStack(alignment: .center, spacing: 16) {
         VStack(alignment: .leading, spacing: 3) {
@@ -175,6 +206,20 @@ struct SettingsView: View {
         }
 
         Spacer()
+
+        if audio.previewCue == cue, let tone = audio.previewToneIndex {
+          HStack(alignment: .center, spacing: 4) {
+            ForEach(0..<4) { index in
+              Capsule()
+                .fill(index <= tone ? scheme.ink : scheme.hairline)
+                .frame(width: 4, height: index == tone ? 18 : 7)
+                .opacity(index < tone ? 0.5 : 1)
+            }
+          }
+          .frame(width: 28, height: 20)
+          .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: tone)
+          .accessibilityHidden(true)
+        }
 
         if cue == audioCue {
           Circle()
@@ -192,7 +237,10 @@ struct SettingsView: View {
         .frame(height: 1)
     }
     .accessibilityElement(children: .combine)
+    .accessibilityIdentifier("audio-\(cue.rawValue)")
     .accessibilityAddTraits(cue == audioCue ? .isSelected : [])
+    .accessibilityValue(audio.previewCue == cue ? audio.previewToneIndex.map { "Playing tone \($0 + 1) of 4" } ?? "Preparing preview" : "")
+    .accessibilityHint(cue == .off ? "Stops the sound preview" : "Selects this sound and previews four breathing tones")
   }
 
   private func aboutRow(_ title: String, value: String) -> some View {

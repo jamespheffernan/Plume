@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import Combine
+import AVFoundation
 
 struct SessionView: View {
   let scheme: BreatheScheme
@@ -13,19 +14,20 @@ struct SessionView: View {
 
   @AppStorage("didSeeBreathPrimer") private var didSeeBreathPrimer = false
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.scenePhase) private var scenePhase
+  @ObservedObject private var audio = AudioCuePlayer.shared
 
   @State private var startDate = Date()
   @State private var pauseStarted: Date?
-  @State private var accumulatedPause: TimeInterval = 0
   @State private var lastIntroDigit: Int?
   @State private var lastBoundaryKey: String?
   @State private var isComplete = false
   @State private var showPrimer = false
-  @State private var startedContinuous = false
+  @State private var preparingAudio = false
   @State private var completionAppeared = false
 
   private let tick = Timer.publish(every: 0.08, on: .main, in: .common).autoconnect()
-  private let introDuration: TimeInterval = 3
+  private let introDuration = SessionAudioPlan.introDuration
 
   private var cueStyle: CueStyle {
     routine.outcomeFamily.cueStyle
@@ -33,10 +35,6 @@ struct SessionView: View {
 
   private var needsGrounding: Bool {
     routine.outcomeFamily.needsGrounding
-  }
-
-  private var isContinuousCue: Bool {
-    cueStyle.continuous
   }
 
   var body: some View {
@@ -54,10 +52,27 @@ struct SessionView: View {
     .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     .onAppear(perform: handleAppear)
     .onDisappear {
-      AudioCuePlayer.shared.stopSustained()
+      audio.stop()
       BreathHaptics.shared.stop()
     }
     .onReceive(tick, perform: handleTick)
+    .onChange(of: scenePhase) { _, phase in
+      if phase != .active { BreathHaptics.shared.stop() }
+      if phase == .background, audioCue == .off || preparingAudio { pauseSession() }
+    }
+    .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification).receive(on: DispatchQueue.main)) { notification in
+      if (notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt) == AVAudioSession.InterruptionType.began.rawValue {
+        pauseSession()
+      }
+    }
+    .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification).receive(on: DispatchQueue.main)) { notification in
+      if (notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt) == AVAudioSession.RouteChangeReason.oldDeviceUnavailable.rawValue {
+        pauseSession()
+      }
+    }
+    .onReceive(NotificationCenter.default.publisher(for: .AVAudioEngineConfigurationChange).receive(on: DispatchQueue.main)) { _ in
+      if audioCue != .off, !preparingAudio { pauseSession() }
+    }
   }
 
   private var sessionTimeline: some View {
@@ -139,6 +154,7 @@ struct SessionView: View {
             ? "Elapsed \(elapsed.clockText)"
             : "Elapsed \(elapsed.clockText) of \(sessionDurationText)"
         )
+        .accessibilityIdentifier("session-time")
     }
   }
 
@@ -314,10 +330,20 @@ struct SessionView: View {
   }
 
   private var controls: some View {
-    HStack(spacing: 12) {
-      ghostControl("Restart", action: restart)
-      primaryControl(isPaused ? "Resume" : "Pause", action: togglePause)
-      ghostControl("End", action: onEnd)
+    VStack(spacing: 12) {
+      if let error = audio.playbackError {
+        Text(error)
+          .font(BreatheFont.utility(12, weight: .regular))
+          .foregroundStyle(scheme.ink)
+          .multilineTextAlignment(.center)
+      }
+      HStack(spacing: 12) {
+        ghostControl("Restart", action: restart)
+        primaryControl(preparingAudio ? "Preparing…" : (isPaused ? "Resume" : "Pause"), action: togglePause)
+          .disabled(preparingAudio)
+          .accessibilityIdentifier("session-primary")
+        ghostControl("End", action: onEnd)
+      }
     }
     .padding(.horizontal, 28)
     .disabled(isComplete)
@@ -441,18 +467,21 @@ struct SessionView: View {
     sessionDurationLimit.map { $0.clockText } ?? duration.displayText
   }
 
+  private func playbackPosition(at date: Date) -> TimeInterval {
+    if !isPaused, !preparingAudio, let position = audio.sessionPosition { return position }
+    return max(0, introDuration + (pauseStarted ?? date).timeIntervalSince(startDate))
+  }
+
   private func effectiveElapsed(at date: Date) -> TimeInterval {
-    let referenceDate = pauseStarted ?? date
-    return max(0, referenceDate.timeIntervalSince(startDate) - accumulatedPause)
+    max(0, playbackPosition(at: date) - introDuration)
   }
 
   private func introCountdownRemaining(at date: Date) -> TimeInterval {
-    let referenceDate = pauseStarted ?? date
-    return max(0, startDate.timeIntervalSince(referenceDate) + accumulatedPause)
+    max(0, introDuration - playbackPosition(at: date))
   }
 
   private func handleTick(_ date: Date) {
-    guard !isPaused, !isComplete, !showPrimer else { return }
+    guard !isPaused, !preparingAudio, !isComplete, !showPrimer, scenePhase == .active else { return }
 
     let introRemaining = introCountdownRemaining(at: date)
     if introRemaining > 0 {
@@ -471,30 +500,10 @@ struct SessionView: View {
       return
     }
 
-    // A continuous cue plays as one seamless looping tone, started once the
-    // countdown ends rather than re-triggered at every boundary.
-    if isContinuousCue, !startedContinuous {
-      startedContinuous = true
-      AudioCuePlayer.shared.startContinuous(
-        audioCue,
-        phases: routine.phases,
-        cycleDuration: routine.cycleDuration,
-        volumeScale: cueStyle.volumeScale
-      )
-    }
-
     let state = routine.state(at: elapsed)
     guard state.boundaryKey != lastBoundaryKey else { return }
     lastBoundaryKey = state.boundaryKey
-    triggerBoundaryCue(for: state.phase)
-  }
-
-  private func triggerBoundaryCue(for phase: BreathPhase) {
-    triggerBoundaryHaptic(for: phase)
-    // Continuous cues are a single sustained tone, not per-boundary chimes.
-    if !isContinuousCue {
-      AudioCuePlayer.shared.play(audioCue, for: phase.kind, phaseDuration: phase.seconds, style: cueStyle)
-    }
+    triggerBoundaryHaptic(for: state.phase)
   }
 
   private func triggerBoundaryHaptic(for phase: BreathPhase) {
@@ -538,7 +547,6 @@ struct SessionView: View {
   }
 
   private func triggerIntroCue() {
-    AudioCuePlayer.shared.playCountdownTick(audioCue, style: cueStyle)
     if hapticsEnabled {
       let generator = UIImpactFeedbackGenerator(style: .soft)
       generator.impactOccurred(intensity: 0.55)
@@ -546,39 +554,29 @@ struct SessionView: View {
   }
 
   private func completeSession() {
+    guard !isComplete else { return }
     withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.6)) {
       isComplete = true
     }
     BreathHaptics.shared.stop()
-    if hapticsEnabled {
+    if hapticsEnabled, scenePhase == .active {
       UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
-    AudioCuePlayer.shared.playCompletion(audioCue)
   }
 
   private func handleAppear() {
-    AudioCuePlayer.shared.prepare(
-      cue: audioCue,
-      style: cueStyle,
-      phases: routine.phases,
-      cycleDuration: routine.cycleDuration
-    )
     if hapticsEnabled || swellHapticsEnabled { BreathHaptics.shared.prepare() }
-    restart()
     showPrimer = !didSeeBreathPrimer
+    if !showPrimer { restart() }
   }
 
   private func restart() {
-    AudioCuePlayer.shared.stopSustained()
     BreathHaptics.shared.stop()
-    startedContinuous = false
-    startDate = Date().addingTimeInterval(introDuration)
-    pauseStarted = nil
-    accumulatedPause = 0
     lastIntroDigit = nil
     lastBoundaryKey = nil
     isComplete = false
     completionAppeared = false
+    startPlayback(from: 0)
   }
 
   private func dismissPrimer() {
@@ -587,17 +585,42 @@ struct SessionView: View {
     restart()
   }
 
-  private func togglePause() {
-    let hasSustainedTone = isContinuousCue && startedContinuous
-    if let pauseStarted {
-      accumulatedPause += Date().timeIntervalSince(pauseStarted)
-      self.pauseStarted = nil
-      if hasSustainedTone { AudioCuePlayer.shared.setSustainedPaused(false) }
-    } else {
-      pauseStarted = Date()
-      if hasSustainedTone { AudioCuePlayer.shared.setSustainedPaused(true) }
-      BreathHaptics.shared.stop()
+  private func startPlayback(from position: TimeInterval) {
+    let now = Date()
+    startDate = now.addingTimeInterval(introDuration - position)
+    pauseStarted = now
+    preparingAudio = true
+    audio.startSession(cue: audioCue, routine: routine, duration: duration, from: position) { ready in
+      preparingAudio = false
+      if ready {
+        startDate = Date().addingTimeInterval(introDuration - position)
+        pauseStarted = nil
+      }
+    } onComplete: {
+      completeSession()
     }
+  }
+
+  private func pauseSession() {
+    // The Complete screen can appear while the completion tone is still audible.
+    // Interruptions must cancel that tail without reopening the finished session.
+    if isComplete {
+      audio.stop()
+      return
+    }
+    guard (!isPaused || preparingAudio), !showPrimer else { return }
+    let now = Date()
+    let position = playbackPosition(at: now)
+    startDate = now.addingTimeInterval(introDuration - position)
+    pauseStarted = now
+    preparingAudio = false
+    audio.stop()
+    BreathHaptics.shared.stop()
+  }
+
+  private func togglePause() {
+    if isPaused { startPlayback(from: playbackPosition(at: Date())) }
+    else { pauseSession() }
   }
 }
 

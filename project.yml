@@ -8,7 +8,7 @@ settings:
     DEVELOPMENT_TEAM: 7W38KL8969
     CODE_SIGN_STYLE: Automatic
     CURRENT_PROJECT_VERSION: 1
-    MARKETING_VERSION: 1.0.0
+    MARKETING_VERSION: 1.1.0
     SWIFT_VERSION: 5.0
 targets:
   BreatheClock:
@@ -30,6 +30,33 @@ targets:
         TARGETED_DEVICE_FAMILY: 1
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+  BreatheClockTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: BreatheClockTests
+    dependencies:
+      - target: BreatheClock
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.turfterrace.plume.tests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Plume.app/Plume"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+  BreatheClockUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: BreatheClockUITests
+    dependencies:
+      - target: BreatheClock
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.turfterrace.plume.uitests
+        TEST_TARGET_NAME: BreatheClock
 schemes:
   BreatheClock:
     build:
@@ -37,3 +64,7 @@ schemes:
         BreatheClock: all
     run:
       config: Debug
+    test:
+      targets:
+        - BreatheClockTests
+        - BreatheClockUITests

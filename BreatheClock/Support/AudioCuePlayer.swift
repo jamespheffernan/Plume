@@ -1,158 +1,255 @@
 import AVFoundation
 import Foundation
+import Combine
 
-final class AudioCuePlayer {
+/// Main-thread playback ownership. Synthesis runs serially off the main thread;
+/// generation checks prevent a cancelled preview/session from starting later.
+final class AudioCuePlayer: ObservableObject {
   static let shared = AudioCuePlayer()
+
+  @Published private(set) var previewCue: AudioCue?
+  @Published private(set) var previewToneIndex: Int?
+  @Published private(set) var playbackError: String?
 
   private let engine = AVAudioEngine()
   private let player = AVAudioPlayerNode()
   private let sampleRate: Double = 44_100
   private let format: AVAudioFormat
-  private var pendingPreviewWorkItems: [DispatchWorkItem] = []
+  private var playbackGeneration = UUID()
+  private var audioActive = false
+  private var sessionStartPosition: TimeInterval?
+  private var sessionStartedAt: TimeInterval?
 
-  // Buffers are synthesized once and reused — synthesis is far too heavy to run
-  // on the main thread at every breath boundary (it would stutter the orb).
+  var sessionPosition: TimeInterval? {
+    guard let start = sessionStartPosition, let startedAt = sessionStartedAt else { return nil }
+    // A route/configuration change can invalidate the render clock before its
+    // notification reaches the UI. Preserve elapsed time when pausing then,
+    // rather than rewinding the session to its last explicit resume point.
+    guard let renderTime = player.lastRenderTime,
+          let time = player.playerTime(forNodeTime: renderTime), time.sampleTime > 0 else {
+      return start + max(0, ProcessInfo.processInfo.systemUptime - startedAt)
+    }
+    return start + Double(time.sampleTime) / time.sampleRate
+  }
   private let renderQueue = DispatchQueue(label: "breatheclock.audio.render", qos: .userInitiated)
   private let cacheLock = NSLock()
   private var bufferCache: [String: AVAudioPCMBuffer] = [:]
   private var cueGainCache: [String: Double] = [:]
-  private var didConfigureSession = false
-  private var sustaining = false
-
-  /// Target peak (pre-output-gain) every cue is normalized to, so switching
-  /// cues never lurches the volume. Output gain then sets the gentle final level.
   private let targetPeak: Double = 0.45
   private let completionPeak: Double = 0.5
 
-  private init() {
+  init() {
     format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
     engine.attach(player)
     engine.connect(player, to: engine.mainMixerNode, format: format)
     engine.mainMixerNode.outputVolume = 0.5
   }
 
-  // MARK: - Discrete cues (one chime per phase boundary)
+  // MARK: - Session playback
 
-  func play(
-    _ cue: AudioCue,
-    for phase: BreathPhase.Kind,
-    phaseDuration: TimeInterval? = nil,
-    style: CueStyle = .crisp
+  /// Queue the complete score ahead of the audio clock. No foreground timer is
+  /// responsible for cues, stage changes, or stopping a finite session.
+  /// Repeated cycles share PCM buffers rather than allocating a whole session.
+  func startSession(
+    cue: AudioCue, routine: Routine, duration: SessionDuration,
+    from position: TimeInterval = 0,
+    onReady: @escaping (Bool) -> Void,
+    onComplete: @escaping () -> Void
   ) {
-    guard cue != .off, style.volumeScale > 0, !style.continuous else { return }
-    guard let buffer = discreteBuffer(for: cue, phase: phase, phaseDuration: phaseDuration, volumeScale: style.volumeScale) else { return }
-    schedule(buffer, loops: false)
-  }
-
-  /// A soft pip for a single countdown digit (3 · 2 · 1), pitched to the cue's
-  /// calm note so it previews the timbre, and quieter than the breath cues so it
-  /// reads as an anticipatory lead-in. Plays for every cue style except silence.
-  func playCountdownTick(_ cue: AudioCue, style: CueStyle) {
-    guard cue != .off, style.volumeScale > 0 else { return }
-    guard let buffer = countdownBuffer(for: cue, volumeScale: style.volumeScale) else { return }
-    schedule(buffer, loops: false)
-  }
-
-  /// Pre-render the buffers a session will need, off the main thread, so the
-  /// first boundary doesn't pay synthesis cost mid-animation.
-  func prepare(cue: AudioCue, style: CueStyle, phases: [BreathPhase], cycleDuration: TimeInterval) {
-    guard cue != .off, style.volumeScale > 0 else { return }
+    stop()
+    playbackError = nil
+    guard cue != .off else { onReady(true); return }
+    let generation = playbackGeneration
+    let plan = SessionAudioPlan(routine: routine, duration: duration)
     renderQueue.async { [weak self] in
       guard let self else { return }
-      if style.continuous {
-        _ = self.continuousBuffer(for: cue, phases: phases, cycleDuration: cycleDuration, volumeScale: style.volumeScale)
-      } else {
-        for kind in Set(phases.map(\.kind)) {
-          let duration = phases.first { $0.kind == kind }?.seconds
-          _ = self.discreteBuffer(for: cue, phase: kind, phaseDuration: duration, volumeScale: style.volumeScale)
+      do {
+        let segments = plan.segments(from: position)
+        var cycles: [SessionAudioPlan.Segment.Content: AVAudioPCMBuffer] = [:]
+        var rendered: [SessionAudioPlan.Segment: AVAudioPCMBuffer] = [:]
+        var buffers: [(AVAudioPCMBuffer, Bool)] = []
+        for segment in segments {
+          if let hit = rendered[segment] { buffers.append((hit, segment.loops)); continue }
+          let source: AVAudioPCMBuffer?
+          if let hit = cycles[segment.content] { source = hit }
+          else {
+            switch segment.content {
+            case .countdown: source = self.countdownBuffer(for: cue, volumeScale: routine.outcomeFamily.cueStyle.volumeScale)
+            case .breaths(let phases): source = self.breathingBuffer(cue: cue, phases: phases, style: routine.outcomeFamily.cueStyle)
+            }
+            cycles[segment.content] = source
+          }
+          guard let source, let buffer = self.fittedBuffer(source, duration: segment.duration, offset: segment.offset) else {
+            throw PlaybackFailure.rendering
+          }
+          rendered[segment] = buffer
+          buffers.append((buffer, segment.loops))
+        }
+        let completion = plan.sessionDuration == nil ? nil : self.completionBuffer(for: cue)
+        if plan.sessionDuration != nil, completion == nil { throw PlaybackFailure.rendering }
+        DispatchQueue.main.async { [weak self] in
+          guard let self, self.playbackGeneration == generation else { return }
+          do {
+            try self.activateAudio()
+            for (index, entry) in buffers.enumerated() {
+              let isLastBreath = index == buffers.count - 1 && plan.sessionDuration != nil
+              self.player.scheduleBuffer(entry.0, at: nil, options: entry.1 ? [.loops] : [], completionCallbackType: .dataPlayedBack) { [weak self] _ in
+                guard isLastBreath else { return }
+                DispatchQueue.main.async {
+                  guard let self, self.playbackGeneration == generation else { return }
+                  onComplete()
+                }
+              }
+            }
+            if let completion {
+              self.player.scheduleBuffer(completion, completionCallbackType: .dataPlayedBack) { [weak self] _ in
+                DispatchQueue.main.async {
+                  guard let self, self.playbackGeneration == generation else { return }
+                  self.stop()
+                }
+              }
+            }
+            self.sessionStartPosition = position
+            self.sessionStartedAt = ProcessInfo.processInfo.systemUptime
+            self.player.play()
+            onReady(true)
+            if buffers.isEmpty { onComplete() }
+          } catch {
+            self.failSession(generation: generation, onReady: onReady)
+          }
+        }
+      } catch {
+        DispatchQueue.main.async { [weak self] in
+          self?.failSession(generation: generation, onReady: onReady)
         }
       }
-      _ = self.completionBuffer(for: cue)
-      _ = self.countdownBuffer(for: cue, volumeScale: style.volumeScale)
     }
   }
 
-  // MARK: - Continuous cue (one seamless looping tone)
-
-  func startContinuous(_ cue: AudioCue, phases: [BreathPhase], cycleDuration: TimeInterval, volumeScale: Double) {
-    guard cue != .off, volumeScale > 0 else { return }
-    stopSustained()
-    guard let buffer = continuousBuffer(for: cue, phases: phases, cycleDuration: cycleDuration, volumeScale: volumeScale) else { return }
-    startIfNeeded()
-    player.scheduleBuffer(buffer, at: nil, options: [.loops], completionHandler: nil)
-    if !player.isPlaying { player.play() }
-    sustaining = true
+  private func failSession(generation: UUID, onReady: (Bool) -> Void) {
+    guard playbackGeneration == generation else { return }
+    stop()
+    playbackError = "Audio could not start. Your session is paused; tap Resume to try again."
+    onReady(false)
   }
 
-  func setSustainedPaused(_ paused: Bool) {
-    guard sustaining else { return }
-    if paused {
-      player.pause()
-    } else {
-      startIfNeeded()
-      player.play()
+  private func breathingBuffer(cue: AudioCue, phases: [BreathPhase], style: CueStyle) -> AVAudioPCMBuffer? {
+    let duration = phases.reduce(0) { $0 + $1.seconds }
+    if style.continuous {
+      return continuousBuffer(for: cue, phases: phases, cycleDuration: duration, volumeScale: style.volumeScale)
     }
+    let frames = Int((duration * sampleRate).rounded())
+    guard frames > 0, let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(frames)),
+          let output = buffer.floatChannelData?[0] else { return nil }
+    buffer.frameLength = AVAudioFrameCount(frames)
+    output.initialize(repeating: 0, count: frames)
+    var time: TimeInterval = 0
+    for phase in phases {
+      guard let cueBuffer = discreteBuffer(for: cue, phase: phase.kind, phaseDuration: phase.seconds, volumeScale: style.volumeScale),
+            let input = cueBuffer.floatChannelData?[0] else { return nil }
+      let start = Int((time * sampleRate).rounded())
+      let length = min(Int(cueBuffer.frameLength), Int((phase.seconds * sampleRate).rounded()), frames - start)
+      if length > 0 {
+        output.advanced(by: start).update(from: input, count: length)
+        // A short phase can cut a ringing tail. Fade only that cut, not the
+        // normal attack or decay, to avoid clicking at a rapid-breath boundary.
+        if length < Int(cueBuffer.frameLength) {
+          let fade = min(220, length)
+          for i in 0..<fade { output[start + length - fade + i] *= Float(fade - i - 1) / Float(fade) }
+        }
+      }
+      time += phase.seconds
+    }
+    return buffer
   }
 
-  func stopSustained() {
-    guard sustaining else { return }
-    player.stop()
-    sustaining = false
-  }
-
-  // MARK: - Preview & completion
+  // MARK: - Sound preview
 
   func playBoxPreview(_ cue: AudioCue) {
-    stopPreview()
+    stop()
+    playbackError = nil
     guard cue != .off else { return }
-
-    let previewPhases: [BreathPhase.Kind] = [.inhale, .holdFull, .exhale, .holdEmpty]
-    for (index, phase) in previewPhases.enumerated() {
-      let item = DispatchWorkItem { [weak self] in
-        self?.play(cue, for: phase, phaseDuration: 4)
+    previewCue = cue
+    let generation = playbackGeneration
+    renderQueue.async { [weak self] in
+      guard let self else { return }
+      let phases: [BreathPhase.Kind] = [.inhale, .holdFull, .exhale, .holdEmpty]
+      let buffers = phases.compactMap { phase in
+        self.discreteBuffer(for: cue, phase: phase, phaseDuration: 4, volumeScale: 1)
+          .flatMap { self.fittedBuffer($0, duration: 4) }
       }
-      pendingPreviewWorkItems.append(item)
-      DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(index * 4), execute: item)
+      DispatchQueue.main.async { [weak self] in
+        guard let self, self.playbackGeneration == generation else { return }
+        do {
+          guard buffers.count == 4 else { throw PlaybackFailure.rendering }
+          try self.activateAudio()
+          for (index, buffer) in buffers.enumerated() {
+            self.player.scheduleBuffer(buffer, completionCallbackType: .dataPlayedBack) { [weak self] _ in
+              DispatchQueue.main.async {
+                guard let self, self.playbackGeneration == generation else { return }
+                if index == 3 { self.stopPreview() }
+                else { self.previewToneIndex = index + 1 }
+              }
+            }
+          }
+          self.player.play()
+          self.previewToneIndex = 0
+        } catch {
+          self.stop()
+          self.playbackError = "Could not play the sound preview. Please try again."
+        }
+      }
     }
   }
 
-  func playCompletion(_ cue: AudioCue) {
-    stopPreview()
-    stopSustained()
-    guard cue != .off, let buffer = completionBuffer(for: cue) else { return }
-    schedule(buffer, loops: false)
+  func stopPreview() {
+    guard previewCue != nil else { return }
+    stop()
   }
 
-  // MARK: - Scheduling
-
-  private func schedule(_ buffer: AVAudioPCMBuffer, loops: Bool) {
-    startIfNeeded()
-    player.scheduleBuffer(buffer, at: nil, options: loops ? [.loops] : [], completionHandler: nil)
-    if !player.isPlaying { player.play() }
-  }
-
-  private func stopPreview() {
-    pendingPreviewWorkItems.forEach { $0.cancel() }
-    pendingPreviewWorkItems.removeAll()
+  /// Also cancels pending rendering, all queued samples, and completion callbacks.
+  func stop() {
+    playbackGeneration = UUID()
+    sessionStartPosition = nil
+    sessionStartedAt = nil
+    playbackError = nil
     player.stop()
-    sustaining = false
+    previewCue = nil
+    previewToneIndex = nil
+    engine.pause()
+    if audioActive {
+      #if os(iOS)
+      try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
+      #endif
+      audioActive = false
+    }
   }
 
-  private func startIfNeeded() {
+  private enum PlaybackFailure: Error { case rendering }
+
+  private func activateAudio() throws {
     #if os(iOS)
-    if !didConfigureSession {
-      try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
-      try? AVAudioSession.sharedInstance().setActive(true)
-      didConfigureSession = true
-    }
+    let session = AVAudioSession.sharedInstance()
+    try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+    try session.setActive(true)
     #endif
-
-    if !engine.isRunning {
-      try? engine.start()
-    }
+    audioActive = true
+    if !engine.isRunning { try engine.start() }
   }
 
-  // MARK: - Buffer construction (cached)
+  /// Silence is the natural space between audible breathing cues, not a
+  /// keepalive track. Audio Off never schedules or activates these buffers.
+  private func fittedBuffer(_ source: AVAudioPCMBuffer, duration: TimeInterval, offset: TimeInterval = 0) -> AVAudioPCMBuffer? {
+    let frames = AVAudioFrameCount((duration * sampleRate).rounded())
+    let skip = Int((offset * sampleRate).rounded())
+    guard frames > 0, let result = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames),
+          let output = result.floatChannelData?[0], let input = source.floatChannelData?[0] else { return nil }
+    result.frameLength = frames
+    output.initialize(repeating: 0, count: Int(frames))
+    let count = min(Int(frames), max(0, Int(source.frameLength) - skip))
+    if count > 0 { output.update(from: input + skip, count: count) }
+    return result
+  }
 
   private func cached(_ key: String, _ build: () -> AVAudioPCMBuffer?) -> AVAudioPCMBuffer? {
     cacheLock.lock()
@@ -175,7 +272,7 @@ final class AudioCuePlayer {
     phaseDuration: TimeInterval?,
     volumeScale: Double
   ) -> AVAudioPCMBuffer? {
-    let key = "d-\(cue.rawValue)-\(phase)-\(Int(volumeScale * 100))"
+    let key = "d-\(cue.rawValue)-\(phase)-\(phaseDuration ?? -1)-\(Int(volumeScale * 100))"
     return cached(key) {
       let raw = discreteSamples(for: cue, phase: phase, phaseDuration: phaseDuration)
       let scaled = raw.map { $0 * cueGain(for: cue) * volumeScale }
@@ -189,7 +286,7 @@ final class AudioCuePlayer {
     cycleDuration: TimeInterval,
     volumeScale: Double
   ) -> AVAudioPCMBuffer? {
-    let key = "c-\(cue.rawValue)-\(Int(cycleDuration * 10))-\(Int(volumeScale * 100))"
+    let key = "c-\(cue.rawValue)-\(phases)-\(cycleDuration)-\(Int(volumeScale * 100))"
     return cached(key) {
       let raw = continuousLoopSamples(for: cue, phases: phases, cycleDuration: cycleDuration)
       let gain = normalizationGain(for: raw, target: targetPeak)

@@ -13,32 +13,61 @@
 		292A3AA0075007B5D1CE7C64 /* SessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B850B4D657D5B4F0EBA1FC6D /* SessionView.swift */; };
 		32E408B820263FF6D6432775 /* AudioCuePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 599AC1DBD2684D5AE704A4B2 /* AudioCuePlayer.swift */; };
 		503D81763F03BC89BBEBBCC1 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE93A22BBEDFA9AE005E8E0C /* LibraryView.swift */; };
+		656A21F1616AE43601034F46 /* SessionAudioPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = DADD80890BAF13B4A93A92B5 /* SessionAudioPlan.swift */; };
+		7DAC856D3FC781EB6AB8880E /* SessionInterruptionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB274ECBD88D004DE8D150D6 /* SessionInterruptionTests.swift */; };
+		8D46F79267F29FD1CE6B4937 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7E152AD1A70B42263FDFC008 /* PrivacyInfo.xcprivacy */; };
+		9D71420A7F497111F702A97A /* SessionAudioPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5FC525E2E982581D2EC2227 /* SessionAudioPlanTests.swift */; };
 		AA02545D9FEE5A5E38706C1A /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF49433358E9D83E66B070AA /* Theme.swift */; };
 		ABD3F17804DE3632A489902A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61D3C46491DEB9065E0F9900 /* SettingsView.swift */; };
 		B09038832E22D48E2A79C4CA /* BreathingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A441A3EA9DB995677A2F39D /* BreathingModels.swift */; };
+		B30AA00B28B7339B0827C4A4 /* AudioCuePlayerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B55F5570D3FECD146D751820 /* AudioCuePlayerTests.swift */; };
 		BF0FDF8969F50D867A16F679 /* BreatheClockApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AB37F983CB245C70E5CC10C /* BreatheClockApp.swift */; };
+		C6F6C39199CE2059674C9D24 /* Plume11UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A3D1150E0A25965CE73FE2F /* Plume11UITests.swift */; };
 		D4740B6B6852839CD819D3BC /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAE95B9C522D24470777785B /* SetupView.swift */; };
 		DAB6D8C1D3D03C4140EC8AB0 /* Fraunces-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 27708907028F0FD4BBF58FEB /* Fraunces-Variable.ttf */; };
 		FC893275DADA25D13DD481F4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9839F2161868D0FDE29F13E4 /* Assets.xcassets */; };
-		B27839BA169A42F6858E3D89 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 57F3E6D35173458E9787ECCE /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		1A14312CC83D9274246CF6EF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1E6DF248ED1E0F5EC6461E97 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E5CD45C0AFE5063F8B7624E9;
+			remoteInfo = BreatheClock;
+		};
+		2650A727E84A1FC70DE54256 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1E6DF248ED1E0F5EC6461E97 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E5CD45C0AFE5063F8B7624E9;
+			remoteInfo = BreatheClock;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		0A441A3EA9DB995677A2F39D /* BreathingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreathingModels.swift; sourceTree = "<group>"; };
+		194A1036A19082BFB1776BAB /* BreatheClockTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BreatheClockTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1F450154B99BEF2596AE0C2C /* BreatheClockUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BreatheClockUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		27708907028F0FD4BBF58FEB /* Fraunces-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fraunces-Variable.ttf"; sourceTree = "<group>"; };
+		4A3D1150E0A25965CE73FE2F /* Plume11UITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Plume11UITests.swift; sourceTree = "<group>"; };
 		599AC1DBD2684D5AE704A4B2 /* AudioCuePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCuePlayer.swift; sourceTree = "<group>"; };
 		61D3C46491DEB9065E0F9900 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		7E152AD1A70B42263FDFC008 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		9003CF209CA48B48F60E6DCE /* BreathHaptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreathHaptics.swift; sourceTree = "<group>"; };
 		9839F2161868D0FDE29F13E4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		57F3E6D35173458E9787ECCE /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		9AB37F983CB245C70E5CC10C /* BreatheClockApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreatheClockApp.swift; sourceTree = "<group>"; };
-		9F8BBD911E43011201EB9FF8 /* Plume.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Plume.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9F8BBD911E43011201EB9FF8 /* BreatheClock.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BreatheClock.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A9984281014C849260347145 /* BreatheClockRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreatheClockRootView.swift; sourceTree = "<group>"; };
 		B2CA4F4A6D88DA482553B38E /* Manrope-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-Variable.ttf"; sourceTree = "<group>"; };
+		B55F5570D3FECD146D751820 /* AudioCuePlayerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCuePlayerTests.swift; sourceTree = "<group>"; };
+		B5FC525E2E982581D2EC2227 /* SessionAudioPlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionAudioPlanTests.swift; sourceTree = "<group>"; };
 		B850B4D657D5B4F0EBA1FC6D /* SessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionView.swift; sourceTree = "<group>"; };
 		CAE95B9C522D24470777785B /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
 		CF49433358E9D83E66B070AA /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		DADD80890BAF13B4A93A92B5 /* SessionAudioPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionAudioPlan.swift; sourceTree = "<group>"; };
 		DE93A22BBEDFA9AE005E8E0C /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		EB274ECBD88D004DE8D150D6 /* SessionInterruptionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionInterruptionTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -57,6 +86,8 @@
 			isa = PBXGroup;
 			children = (
 				ED03EEAE096D1DBA8D99656B /* BreatheClock */,
+				8201A176FA3B1F53ADA3ABF0 /* BreatheClockTests */,
+				6E9CB2B5F010FA5A1CD01FFF /* BreatheClockUITests */,
 				557EFB04B6D0DBD908FBE840 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -64,7 +95,9 @@
 		557EFB04B6D0DBD908FBE840 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				9F8BBD911E43011201EB9FF8 /* Plume.app */,
+				9F8BBD911E43011201EB9FF8 /* BreatheClock.app */,
+				194A1036A19082BFB1776BAB /* BreatheClockTests.xctest */,
+				1F450154B99BEF2596AE0C2C /* BreatheClockUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -88,11 +121,29 @@
 			path = Support;
 			sourceTree = "<group>";
 		};
+		6E9CB2B5F010FA5A1CD01FFF /* BreatheClockUITests */ = {
+			isa = PBXGroup;
+			children = (
+				4A3D1150E0A25965CE73FE2F /* Plume11UITests.swift */,
+			);
+			path = BreatheClockUITests;
+			sourceTree = "<group>";
+		};
+		8201A176FA3B1F53ADA3ABF0 /* BreatheClockTests */ = {
+			isa = PBXGroup;
+			children = (
+				B55F5570D3FECD146D751820 /* AudioCuePlayerTests.swift */,
+				B5FC525E2E982581D2EC2227 /* SessionAudioPlanTests.swift */,
+				EB274ECBD88D004DE8D150D6 /* SessionInterruptionTests.swift */,
+			);
+			path = BreatheClockTests;
+			sourceTree = "<group>";
+		};
 		9B6AF2E423AFB5EE28B57F48 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
 				9839F2161868D0FDE29F13E4 /* Assets.xcassets */,
-				57F3E6D35173458E9787ECCE /* PrivacyInfo.xcprivacy */,
+				7E152AD1A70B42263FDFC008 /* PrivacyInfo.xcprivacy */,
 				64403CE13B974256D98A6094 /* Fonts */,
 			);
 			path = Resources;
@@ -111,6 +162,7 @@
 			isa = PBXGroup;
 			children = (
 				0A441A3EA9DB995677A2F39D /* BreathingModels.swift */,
+				DADD80890BAF13B4A93A92B5 /* SessionAudioPlan.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -130,6 +182,42 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		D94C27E99696854DBAF869BC /* BreatheClockUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BB021C95D464CAB3C661FEF4 /* Build configuration list for PBXNativeTarget "BreatheClockUITests" */;
+			buildPhases = (
+				132558958E14C9F5613CBA23 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				752A2F8573A790B6A141A06D /* PBXTargetDependency */,
+			);
+			name = BreatheClockUITests;
+			packageProductDependencies = (
+			);
+			productName = BreatheClockUITests;
+			productReference = 1F450154B99BEF2596AE0C2C /* BreatheClockUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		DA711B173732DA544D20D65D /* BreatheClockTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 84B9585447A2732026B4C266 /* Build configuration list for PBXNativeTarget "BreatheClockTests" */;
+			buildPhases = (
+				57F95FC71131F22A736BADB1 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4CC305188FE28D8F87AB674F /* PBXTargetDependency */,
+			);
+			name = BreatheClockTests;
+			packageProductDependencies = (
+			);
+			productName = BreatheClockTests;
+			productReference = 194A1036A19082BFB1776BAB /* BreatheClockTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		E5CD45C0AFE5063F8B7624E9 /* BreatheClock */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D37D339DA62A93FB244E07AD /* Build configuration list for PBXNativeTarget "BreatheClock" */;
@@ -145,7 +233,7 @@
 			packageProductDependencies = (
 			);
 			productName = BreatheClock;
-			productReference = 9F8BBD911E43011201EB9FF8 /* Plume.app */;
+			productReference = 9F8BBD911E43011201EB9FF8 /* BreatheClock.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -155,9 +243,19 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 2700;
+				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					D94C27E99696854DBAF869BC = {
+						DevelopmentTeam = 7W38KL8969;
+						ProvisioningStyle = Automatic;
+						TestTargetID = E5CD45C0AFE5063F8B7624E9;
+					};
+					DA711B173732DA544D20D65D = {
+						DevelopmentTeam = 7W38KL8969;
+						ProvisioningStyle = Automatic;
+					};
 					E5CD45C0AFE5063F8B7624E9 = {
+						DevelopmentTeam = 7W38KL8969;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -177,6 +275,8 @@
 			projectRoot = "";
 			targets = (
 				E5CD45C0AFE5063F8B7624E9 /* BreatheClock */,
+				DA711B173732DA544D20D65D /* BreatheClockTests */,
+				D94C27E99696854DBAF869BC /* BreatheClockUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -187,15 +287,33 @@
 			buildActionMask = 2147483647;
 			files = (
 				FC893275DADA25D13DD481F4 /* Assets.xcassets in Resources */,
-				B27839BA169A42F6858E3D89 /* PrivacyInfo.xcprivacy in Resources */,
 				DAB6D8C1D3D03C4140EC8AB0 /* Fraunces-Variable.ttf in Resources */,
 				1B73849B265AEBCF752B51E8 /* Manrope-Variable.ttf in Resources */,
+				8D46F79267F29FD1CE6B4937 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		132558958E14C9F5613CBA23 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C6F6C39199CE2059674C9D24 /* Plume11UITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		57F95FC71131F22A736BADB1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B30AA00B28B7339B0827C4A4 /* AudioCuePlayerTests.swift in Sources */,
+				9D71420A7F497111F702A97A /* SessionAudioPlanTests.swift in Sources */,
+				7DAC856D3FC781EB6AB8880E /* SessionInterruptionTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C10EF078513A834F10307CBF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -206,6 +324,7 @@
 				10E3430CD730E5B5AC1E3A8E /* BreatheClockRootView.swift in Sources */,
 				B09038832E22D48E2A79C4CA /* BreathingModels.swift in Sources */,
 				503D81763F03BC89BBEBBCC1 /* LibraryView.swift in Sources */,
+				656A21F1616AE43601034F46 /* SessionAudioPlan.swift in Sources */,
 				292A3AA0075007B5D1CE7C64 /* SessionView.swift in Sources */,
 				ABD3F17804DE3632A489902A /* SettingsView.swift in Sources */,
 				D4740B6B6852839CD819D3BC /* SetupView.swift in Sources */,
@@ -215,6 +334,19 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		4CC305188FE28D8F87AB674F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E5CD45C0AFE5063F8B7624E9 /* BreatheClock */;
+			targetProxy = 2650A727E84A1FC70DE54256 /* PBXContainerItemProxy */;
+		};
+		752A2F8573A790B6A141A06D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E5CD45C0AFE5063F8B7624E9 /* BreatheClock */;
+			targetProxy = 1A14312CC83D9274246CF6EF /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
 		3E4871A3A40B145A7B77BCA3 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -223,7 +355,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 7W38KL8969;
 				INFOPLIST_FILE = BreatheClock/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -243,7 +374,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -280,7 +410,6 @@
 				DEVELOPMENT_TEAM = 7W38KL8969;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -290,23 +419,93 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
+		7DEE2DDC35E6F808885E1C91 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.turfterrace.plume.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Plume.app/Plume";
+			};
+			name = Release;
+		};
+		A580B2C2246AC75E08FC99F9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.turfterrace.plume.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = BreatheClock;
+			};
+			name = Release;
+		};
+		AECB524B92958883215258FA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.turfterrace.plume.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Plume.app/Plume";
+			};
+			name = Debug;
+		};
+		B94EF661074363A4E38E5CD6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.turfterrace.plume.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = BreatheClock;
+			};
+			name = Debug;
+		};
 		C56F5799A7280E32E35878A9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -343,7 +542,6 @@
 				DEVELOPMENT_TEAM = 7W38KL8969;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -359,13 +557,12 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -379,7 +576,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 7W38KL8969;
 				INFOPLIST_FILE = BreatheClock/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -398,6 +594,24 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		84B9585447A2732026B4C266 /* Build configuration list for PBXNativeTarget "BreatheClockTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AECB524B92958883215258FA /* Debug */,
+				7DEE2DDC35E6F808885E1C91 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		BB021C95D464CAB3C661FEF4 /* Build configuration list for PBXNativeTarget "BreatheClockUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B94EF661074363A4E38E5CD6 /* Debug */,
+				A580B2C2246AC75E08FC99F9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		D37D339DA62A93FB244E07AD /* Build configuration list for PBXNativeTarget "BreatheClock" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
