@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct BreatheClockRootView: View {
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @AppStorage("scheme") private var schemeRawValue = BreatheScheme.sepiaClay.rawValue
   @AppStorage("audio") private var audioRawValue = AudioCue.bowl.rawValue
   @AppStorage("haptics") private var hapticsEnabled = true
@@ -93,6 +94,7 @@ struct BreatheClockRootView: View {
       sessionDuration = durationBinding(for: selectedRoutine).wrappedValue
       route = .library
       showSafety = !didAcknowledgeSafety
+      #if DEBUG
       // Testing hook: force a colour scheme so each palette can be screenshotted
       // without tapping through Settings (env survives relaunch more reliably
       // than a simctl `defaults write`).
@@ -120,6 +122,7 @@ struct BreatheClockRootView: View {
         showSafety = false
         route = .session
       }
+      #endif
     }
   }
 
@@ -167,7 +170,7 @@ struct BreatheClockRootView: View {
   }
 
   private func navigate(to route: AppRoute) {
-    withAnimation(.easeInOut(duration: 0.32)) {
+    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.24)) {
       self.route = route
     }
   }
@@ -193,11 +196,11 @@ private struct SafetyOnboardingView: View {
           Spacer(minLength: 40)
 
           Text("Plume")
-            .font(BreatheFont.display(40, weight: .light, italic: true))
+            .font(BreatheFont.display(40, weight: .light, relativeTo: .largeTitle))
             .foregroundStyle(scheme.ink)
 
           Text("A note on safety")
-            .font(BreatheFont.utility(11, weight: .medium))
+            .font(BreatheFont.utility(11, weight: .medium, relativeTo: .headline))
             .foregroundStyle(scheme.muted)
             .tracking(3)
             .textCase(.uppercase)
@@ -205,7 +208,7 @@ private struct SafetyOnboardingView: View {
             .padding(.bottom, 26)
 
           Text(BreatheSafety.disclaimer)
-            .font(BreatheFont.utility(15, weight: .regular))
+            .font(BreatheFont.utility(15, weight: .regular, relativeTo: .body))
             .foregroundStyle(scheme.ink)
             .lineSpacing(5)
             .fixedSize(horizontal: false, vertical: true)
@@ -214,10 +217,13 @@ private struct SafetyOnboardingView: View {
 
           Button(action: onAcknowledge) {
             Text("I understand")
-              .font(BreatheFont.display(18, weight: .regular, italic: true))
+              .font(BreatheFont.display(18, weight: .regular, relativeTo: .headline))
               .foregroundStyle(scheme.paper)
-              .frame(maxWidth: .infinity)
-              .frame(height: 62)
+              .multilineTextAlignment(.center)
+              .fixedSize(horizontal: false, vertical: true)
+              .padding(.horizontal, 20)
+              .padding(.vertical, 14)
+              .frame(maxWidth: .infinity, minHeight: 62)
               .background(Capsule().fill(scheme.ink))
           }
           .buttonStyle(.plain)

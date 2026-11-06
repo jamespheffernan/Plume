@@ -75,3 +75,32 @@ final class SessionAudioPlanTests: XCTestCase {
     XCTAssertFalse(plan.segments.contains(where: \.loops))
   }
 }
+
+final class SessionDisplaySampleTests: XCTestCase {
+  func testFiniteEndpointKeepsLastBreathForCyclicAndGuidedRoutines() throws {
+    for id in ["box", "samadhi"] {
+      let routine = try XCTUnwrap(Routine.byID(id))
+      let limit = try XCTUnwrap(routine.alignedSessionDuration(for: SessionDuration.options[0]))
+      let last = routine.state(at: limit.nextDown)
+      for elapsed in [limit.nextDown, limit, limit + 1] {
+        let sample = SessionView.displaySample(elapsed: elapsed, limit: limit)
+        let state = routine.state(at: sample)
+        XCTAssertLessThan(sample, limit)
+        XCTAssertEqual(state.phaseIndex, last.phaseIndex, id)
+        XCTAssertEqual(state.stageIndex, last.stageIndex, id)
+        XCTAssertEqual(state.countdownDigit, last.countdownDigit, id)
+      }
+    }
+  }
+
+  func testDisplaySamplingPreservesOrdinaryAndUnlimitedTime() {
+    XCTAssertEqual(SessionView.displaySample(elapsed: 3, limit: 64), 3)
+    let limits: [TimeInterval?] = [nil, 0, -1, .infinity]
+    for limit in limits {
+      XCTAssertEqual(SessionView.displaySample(elapsed: 64, limit: limit), 64)
+    }
+    let box = Routine.byID("box")!
+    XCTAssertEqual(box.state(at: SessionView.displaySample(elapsed: 64, limit: nil)).phaseIndex, 0)
+    XCTAssertEqual(box.state(at: SessionView.displaySample(elapsed: 64, limit: 64)).phaseIndex, 3)
+  }
+}

@@ -1,9 +1,9 @@
 import SwiftUI
 
 enum BreatheScheme: String, CaseIterable, Identifiable {
-  // Four light stocks then one dark. Every scheme is a distinct paper *and*
-  // accent hue-family (not the old three-creams-with-brown), each verified to
-  // clear ink ≥10:1, muted ≥4.5:1, accent ≥3:1 on its own paper.
+  // Four light stocks then one dark, each with its own paper and accent family.
+  // Ink clears 10:1 and muted clears 4.5:1 against each scheme's paper.
+  // Accents clear 3:1 against both paper and the composited progress track.
   case sepiaClay
   case cochineal
   case celadon
@@ -34,8 +34,8 @@ enum BreatheScheme: String, CaseIterable, Identifiable {
 
   /// Dark-field scheme where the orb inverts into a light source (the light
   /// `ink` glows on the dark `paper`). Drives `preferredColorScheme` so the
-  /// status bar flips light, and it is why the orb numeral crossfades to
-  /// `paper` rather than white — `paper` reads on both a dark and a light orb.
+  /// status bar flips light, and selects the orb numeral
+  /// polarity as the sphere fills or dissolves.
   var inverted: Bool {
     self == .indigoVat
   }
@@ -75,10 +75,10 @@ enum BreatheScheme: String, CaseIterable, Identifiable {
 
   var accent: Color {
     switch self {
-    case .sepiaClay: return Color(hex: 0xC2563D)  // terracotta clay
-    case .cochineal: return Color(hex: 0xD24B58)  // cochineal carmine
-    case .celadon: return Color(hex: 0x219271)    // fired jade
-    case .coldHarbor: return Color(hex: 0x17919C) // verdigris teal
+    case .sepiaClay: return Color(hex: 0xBC5138)  // terracotta clay
+    case .cochineal: return Color(hex: 0xC7404F)  // cochineal carmine
+    case .celadon: return Color(hex: 0x008262)    // fired jade
+    case .coldHarbor: return Color(hex: 0x007E88) // verdigris teal
     case .indigoVat: return Color(hex: 0xAC8123)  // coppery vat-bloom
     }
   }
@@ -117,46 +117,27 @@ extension Color {
 }
 
 enum BreatheFont {
-  /// Fraunces display face. Scales with Dynamic Type: the fixed `size` is the
-  /// reference point at the Large (default) content size, and growth follows
-  /// `textStyle`'s ramp. Pass `relativeTo:` to override the inferred style;
-  /// the default maps `size` to the text style whose own default size is
-  /// closest, so each call site grows along a sensible curve.
+  /// Bundled Fraunces is upright-only: opsz, wght, SOFT and WONK axes,
+  /// with real Thin/Light/Regular/SemiBold/Bold named instances. Core Text
+  /// applies optical sizing. Do not request an italic the binary doesn't have.
+  /// Call sites name their semantic role explicitly; point size is the Large
+  /// reference size, never a proxy for the Dynamic Type scaling curve.
   static func display(
     _ size: CGFloat,
     weight: Font.Weight = .regular,
-    italic: Bool = false,
-    relativeTo textStyle: Font.TextStyle? = nil
+    relativeTo textStyle: Font.TextStyle
   ) -> Font {
-    let font = Font.custom(frauncesName(for: weight), size: size, relativeTo: textStyle ?? scaleStyle(for: size))
-    return italic ? font.italic() : font
+    Font.custom(frauncesName(for: weight), size: size, relativeTo: textStyle)
   }
 
-  /// Manrope utility face. Scales with Dynamic Type — see `display(_:)`.
+  /// Manrope's bundled wght axis exposes these named instances directly.
+  /// Native Dynamic Type remains unrestricted here, including accessibility.
   static func utility(
     _ size: CGFloat,
     weight: Font.Weight = .regular,
-    relativeTo textStyle: Font.TextStyle? = nil
+    relativeTo textStyle: Font.TextStyle
   ) -> Font {
-    Font.custom(manropeName(for: weight), size: size, relativeTo: textStyle ?? scaleStyle(for: size))
-  }
-
-  /// Picks the Dynamic Type text style whose default point size is nearest the
-  /// given fixed size, so `relativeTo:` scaling follows a curve matched to the
-  /// role: tiny tracked labels grow aggressively, hero titles grow gently.
-  private static func scaleStyle(for size: CGFloat) -> Font.TextStyle {
-    switch size {
-    case ..<11.5: return .caption2     // 11
-    case ..<12.5: return .caption      // 12
-    case ..<14: return .footnote       // 13
-    case ..<15.5: return .subheadline  // 15
-    case ..<16.5: return .callout      // 16
-    case ..<18.5: return .body         // 17
-    case ..<21: return .title3         // 20
-    case ..<25: return .title2         // 22
-    case ..<31: return .title          // 28
-    default: return .largeTitle        // 34
-    }
+    Font.custom(manropeName(for: weight), size: size, relativeTo: textStyle)
   }
 
   private static func frauncesName(for weight: Font.Weight) -> String {
@@ -192,6 +173,37 @@ enum BreatheFont {
       return "Manrope-Bold"
     }
     return "Manrope-Regular"
+  }
+}
+
+/// Center the rendered line as well as its container, including tracked labels.
+/// Keep this on the text itself; a centered outer frame alone is not enough.
+struct BreatheButtonText: View {
+  let title: String
+  let font: Font
+  var tracking: CGFloat = 0
+  var uppercase = false
+
+  var body: some View {
+    Text(title)
+      .font(font)
+      .tracking(tracking)
+      .textCase(uppercase ? .uppercase : nil)
+      .multilineTextAlignment(.center)
+  }
+}
+
+/// A quiet press response without changing layout or the label's weight.
+struct BreathePressStyle: ButtonStyle {
+  // Muted text has less contrast headroom than ink; its callers skip fading.
+  var pressedOpacity: Double = 0.8
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  func makeBody(configuration: Configuration) -> some View {
+    configuration.label
+      .scaleEffect(configuration.isPressed && !reduceMotion ? 0.96 : 1)
+      .opacity(configuration.isPressed ? pressedOpacity : 1)
+      .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: configuration.isPressed)
   }
 }
 

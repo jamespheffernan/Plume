@@ -13,6 +13,7 @@ struct SettingsView: View {
   @ObservedObject private var audio = AudioCuePlayer.shared
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.scenePhase) private var scenePhase
+  @Environment(\.openURL) private var openURL
 
   var body: some View {
     ScrollView {
@@ -22,7 +23,7 @@ struct SettingsView: View {
           .padding(.bottom, 26)
 
         Text("Settings")
-          .font(BreatheFont.display(38, weight: .light, italic: true))
+          .font(BreatheFont.display(38, weight: .light, relativeTo: .largeTitle))
           .foregroundStyle(scheme.ink)
           .tracking(-0.7)
           .padding(.bottom, 42)
@@ -42,73 +43,61 @@ struct SettingsView: View {
             }
           }
           Text("With sound on, breathing audio continues when your screen locks or you switch apps. With sound off, the session pauses. Haptics work while Plume is on screen.")
-            .font(BreatheFont.utility(12, weight: .light))
+            .font(BreatheFont.utility(13, weight: .regular, relativeTo: .body))
             .foregroundStyle(scheme.muted)
             .fixedSize(horizontal: false, vertical: true)
           if let error = audio.playbackError {
             Text(error)
-              .font(BreatheFont.utility(12, weight: .regular))
+              .font(BreatheFont.utility(12, weight: .regular, relativeTo: .body))
               .foregroundStyle(scheme.ink)
           }
         }
 
         settingsSection(title: "Haptics", topPadding: 34) {
-          HStack(alignment: .center, spacing: 18) {
+          Toggle(isOn: $swellHapticsEnabled) {
             VStack(alignment: .leading, spacing: 4) {
               Text("Breath swell")
-                .font(BreatheFont.display(17, weight: .regular))
+                .font(BreatheFont.display(17, weight: .regular, relativeTo: .headline))
                 .foregroundStyle(scheme.ink)
               Text("Gradual vibration during inhale and exhale")
-                .font(BreatheFont.utility(12, weight: .light))
+                .font(BreatheFont.utility(13, weight: .regular, relativeTo: .body))
                 .foregroundStyle(scheme.muted)
             }
-
-            Spacer()
-
-            Toggle("", isOn: $swellHapticsEnabled)
-              .labelsHidden()
-              .tint(scheme.ink)
           }
+          .tint(scheme.inverted ? scheme.accent : scheme.ink)
           .padding(.vertical, 5)
-          .accessibilityElement(children: .combine)
 
-          HStack(alignment: .center, spacing: 18) {
+          Toggle(isOn: $hapticsEnabled) {
             VStack(alignment: .leading, spacing: 4) {
               Text("Phase taps")
-                .font(BreatheFont.display(17, weight: .regular))
+                .font(BreatheFont.display(17, weight: .regular, relativeTo: .headline))
                 .foregroundStyle(scheme.ink)
               Text("Tap at holds, session start, and completion")
-                .font(BreatheFont.utility(12, weight: .light))
+                .font(BreatheFont.utility(13, weight: .regular, relativeTo: .body))
                 .foregroundStyle(scheme.muted)
             }
-
-            Spacer()
-
-            Toggle("", isOn: $hapticsEnabled)
-              .labelsHidden()
-              .tint(scheme.ink)
           }
+          .tint(scheme.inverted ? scheme.accent : scheme.ink)
           .padding(.vertical, 5)
-          .accessibilityElement(children: .combine)
         }
 
         settingsSection(title: "Safety", topPadding: 34) {
           VStack(alignment: .leading, spacing: 14) {
             Text(BreatheSafety.disclaimer)
-              .font(BreatheFont.utility(12, weight: .light))
+              .font(BreatheFont.utility(13, weight: .regular, relativeTo: .body))
               .foregroundStyle(scheme.muted)
               .lineSpacing(3)
               .fixedSize(horizontal: false, vertical: true)
 
             VStack(alignment: .leading, spacing: 6) {
               Text("Take extra care with")
-                .font(BreatheFont.utility(10, weight: .medium))
+                .font(BreatheFont.utility(10, weight: .medium, relativeTo: .headline))
                 .foregroundStyle(scheme.muted)
                 .tracking(2.4)
                 .textCase(.uppercase)
               ForEach(BreatheSafety.contraindications, id: \.self) { item in
                 Text("— \(item)")
-                  .font(BreatheFont.utility(12, weight: .light))
+                  .font(BreatheFont.utility(13, weight: .regular, relativeTo: .body))
                   .foregroundStyle(scheme.ink)
               }
             }
@@ -117,10 +106,11 @@ struct SettingsView: View {
 
         settingsSection(title: "About", topPadding: 34) {
           VStack(spacing: 0) {
-            aboutRow("Version", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1.0")
+            aboutRow("Version", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1.1")
             aboutRow("Made in", value: "Cambridge, UK")
+            ratingRow
             Text("A Turf Terrace product")
-              .font(BreatheFont.display(14, weight: .regular, italic: true))
+              .font(BreatheFont.display(14, weight: .regular, relativeTo: .footnote))
               .foregroundStyle(scheme.ink)
               .frame(maxWidth: .infinity, alignment: .leading)
               .padding(.top, 18)
@@ -132,7 +122,6 @@ struct SettingsView: View {
     }
     .background(scheme.paper)
     .scrollIndicators(.hidden)
-    .animation(reduceMotion ? nil : .easeInOut(duration: 0.4), value: scheme.id)
     .onDisappear { audio.stopPreview() }
     .onChange(of: scenePhase) { _, phase in
       if phase != .active { audio.stopPreview() }
@@ -156,12 +145,12 @@ struct SettingsView: View {
           Image(systemName: "chevron.left")
             .font(.system(size: 12, weight: .semibold))
           Text("Back")
-            .font(BreatheFont.utility(12, weight: .regular))
+            .font(BreatheFont.utility(12, weight: .regular, relativeTo: .subheadline))
             .tracking(2.1)
         }
         .textCase(.uppercase)
         .foregroundStyle(scheme.muted)
-        .frame(height: 44)
+        .frame(minHeight: 44)
         .contentShape(Rectangle())
       }
       .buttonStyle(.plain)
@@ -177,7 +166,7 @@ struct SettingsView: View {
   ) -> some View {
     VStack(alignment: .leading, spacing: 14) {
       Text(title)
-        .font(BreatheFont.utility(10, weight: .medium))
+        .font(BreatheFont.utility(10, weight: .medium, relativeTo: .headline))
         .foregroundStyle(scheme.muted)
         .tracking(3.1)
         .textCase(.uppercase)
@@ -195,37 +184,47 @@ struct SettingsView: View {
       HStack(alignment: .center, spacing: 16) {
         VStack(alignment: .leading, spacing: 3) {
           Text(cue.title)
-            .font(BreatheFont.display(17, weight: cue == audioCue ? .semibold : .regular))
+            .font(BreatheFont.display(17, weight: .regular, relativeTo: .headline))
             .foregroundStyle(scheme.ink)
 
           if let detail = cue.detail {
             Text(detail)
-              .font(BreatheFont.display(13, weight: .light, italic: true))
+              .font(BreatheFont.display(13, weight: .light, relativeTo: .caption))
               .foregroundStyle(scheme.muted)
           }
         }
 
         Spacer()
 
-        if audio.previewCue == cue, let tone = audio.previewToneIndex {
-          HStack(alignment: .center, spacing: 4) {
-            ForEach(0..<4) { index in
-              Capsule()
-                .fill(index <= tone ? scheme.ink : scheme.hairline)
-                .frame(width: 4, height: index == tone ? 18 : 7)
-                .opacity(index < tone ? 0.5 : 1)
+        // Keep the label's available width stable through preparation,
+        // playback and cancellation, including at larger text sizes.
+        ZStack {
+          if audio.previewCue == cue {
+            if let tone = audio.previewToneIndex {
+              HStack(alignment: .center, spacing: 4) {
+                ForEach(0..<4) { index in
+                  Capsule()
+                    .fill(index <= tone ? scheme.ink : scheme.hairline)
+                    .frame(width: 4, height: index == tone ? 18 : 7)
+                    .opacity(index < tone ? 0.5 : 1)
+                }
+              }
+              .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: tone)
+            } else {
+              ProgressView()
+                .controlSize(.mini)
+                .tint(scheme.ink)
             }
           }
-          .frame(width: 28, height: 20)
-          .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: tone)
-          .accessibilityHidden(true)
         }
+        .frame(width: 28, height: 20)
+        .accessibilityHidden(true)
 
-        if cue == audioCue {
-          Circle()
-            .fill(scheme.ink)
-            .frame(width: 8, height: 8)
-        }
+        Circle()
+          .fill(scheme.ink)
+          .frame(width: 8, height: 8)
+          .opacity(cue == audioCue ? 1 : 0)
+          .accessibilityHidden(true)
       }
       .padding(.vertical, 14)
       .contentShape(Rectangle())
@@ -243,14 +242,49 @@ struct SettingsView: View {
     .accessibilityHint(cue == .off ? "Stops the sound preview" : "Selects this sound and previews four breathing tones")
   }
 
+  // App identity verified in docs/plume-1.1-testflight.md and Apple's public lookup.
+  // An explicit action uses write-review; requestReview may silently show nothing.
+  static let ratingURL = URL(string: "https://apps.apple.com/app/id6786672870?action=write-review")!
+
+  static func leaveRating(using openURL: OpenURLAction) {
+    openURL(ratingURL)
+  }
+
+  private var ratingRow: some View {
+    Button {
+      Self.leaveRating(using: openURL)
+    } label: {
+      HStack(spacing: 16) {
+        Text("Leave a Rating")
+          .font(BreatheFont.display(17, weight: .regular, relativeTo: .headline))
+        Spacer()
+        Image(systemName: "arrow.up.right")
+          .font(.system(size: 12, weight: .regular))
+          .accessibilityHidden(true)
+      }
+      .foregroundStyle(scheme.ink)
+      .frame(minHeight: 44)
+      .padding(.vertical, 5)
+      .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .overlay(alignment: .bottom) {
+      Rectangle()
+        .fill(scheme.hairline)
+        .frame(height: 1)
+    }
+    .accessibilityIdentifier("leave-rating")
+    .accessibilityHint("Opens the App Store to rate Plume")
+  }
+
   private func aboutRow(_ title: String, value: String) -> some View {
     HStack {
       Text(title)
-        .font(BreatheFont.utility(13, weight: .regular))
+        .font(BreatheFont.utility(13, weight: .regular, relativeTo: .subheadline))
         .foregroundStyle(scheme.muted)
       Spacer()
       Text(value)
-        .font(BreatheFont.display(14, weight: .regular, italic: true))
+        .font(BreatheFont.display(14, weight: .regular, relativeTo: .footnote))
         .foregroundStyle(scheme.ink)
     }
     .padding(.vertical, 13)
@@ -276,21 +310,21 @@ struct SettingsView: View {
 
         VStack(alignment: .leading, spacing: 3) {
           Text(option.name)
-            .font(BreatheFont.display(17, weight: isSelected ? .semibold : .regular))
+            .font(BreatheFont.display(17, weight: .regular, relativeTo: .headline))
             .foregroundStyle(scheme.ink)
 
           Text(option.mood)
-            .font(BreatheFont.display(13, weight: .light, italic: true))
+            .font(BreatheFont.display(13, weight: .light, relativeTo: .caption))
             .foregroundStyle(scheme.muted)
         }
 
         Spacer()
 
-        if isSelected {
-          Circle()
-            .fill(scheme.ink)
-            .frame(width: 8, height: 8)
-        }
+        Circle()
+          .fill(scheme.ink)
+          .frame(width: 8, height: 8)
+          .opacity(isSelected ? 1 : 0)
+          .accessibilityHidden(true)
       }
       .padding(.vertical, 12)
       .contentShape(Rectangle())

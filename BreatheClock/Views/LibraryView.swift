@@ -12,6 +12,7 @@ struct LibraryView: View {
   var onEntrancePlayed: () -> Void = {}
 
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
   @State private var selectedCategory: String?
   @State private var entranceShown = false
 
@@ -71,8 +72,6 @@ struct LibraryView: View {
     // the last sliver of the zoom (0.985 → 1) on the breath wave as it settles.
     .scaleEffect(entranceScale, anchor: .top)
     .animation(launchAnimates ? LaunchEntrance.curve : nil, value: entranceShown)
-    .animation(.easeInOut(duration: 0.4), value: scheme.id)
-    .animation(.easeInOut(duration: 0.28), value: selectedCategory)
     .onAppear(perform: playEntrance)
   }
 
@@ -126,7 +125,7 @@ struct LibraryView: View {
   private var header: some View {
     HStack(alignment: .center) {
       Text("Plume")
-        .font(BreatheFont.display(30, weight: .light, italic: true))
+        .font(BreatheFont.display(30, weight: .light, relativeTo: .title))
         .foregroundStyle(scheme.ink)
         .tracking(-0.4)
 
@@ -163,19 +162,20 @@ struct LibraryView: View {
   private func pill(title: String, category: String?) -> some View {
     let isSelected = selectedCategory == category
     return Button {
-      withAnimation(.easeInOut(duration: 0.25)) { selectedCategory = category }
+      // Filtering replaces content immediately; don't slide rows or blend the
+      // selected pill's opposite foreground/background colors through each other.
+      selectedCategory = category
     } label: {
-      Text(title)
-        .font(BreatheFont.utility(12, weight: isSelected ? .semibold : .regular))
-        .tracking(0.6)
+      BreatheButtonText(title: title, font: BreatheFont.utility(12, weight: .medium, relativeTo: .subheadline), tracking: 0.6)
         .foregroundStyle(isSelected ? scheme.paper : scheme.ink)
         .padding(.horizontal, 16)
         .padding(.vertical, 9)
+        .frame(minHeight: 44)
         .background(Capsule().fill(isSelected ? scheme.ink : Color.clear))
         .overlay(Capsule().stroke(scheme.ink.opacity(isSelected ? 0 : 0.2), lineWidth: 1))
         .contentShape(Capsule())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(BreathePressStyle())
     .accessibilityLabel(category == nil ? "All practices" : "\(title) practices")
     .accessibilityAddTraits(isSelected ? .isSelected : [])
   }
@@ -189,7 +189,7 @@ struct LibraryView: View {
       if showLabel {
         reveal(baseIndex) {
           Text(pillLabel(group.category))
-            .font(BreatheFont.display(14, weight: .regular, italic: true))
+            .font(BreatheFont.display(14, weight: .regular, relativeTo: .headline))
             .foregroundStyle(scheme.muted)
             .tracking(0.4)
         }
@@ -209,30 +209,28 @@ struct LibraryView: View {
     Button {
       onSelectRoutine(routine)
     } label: {
-      HStack(alignment: .firstTextBaseline, spacing: 16) {
-        VStack(alignment: .leading, spacing: 4) {
-          Text(routine.name)
-            .font(BreatheFont.display(19, weight: routine == selectedRoutine ? .semibold : .regular))
-            .foregroundStyle(scheme.ink)
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-
-          Text(routine.description)
-            .font(BreatheFont.utility(12, weight: .light))
-            .foregroundStyle(scheme.muted)
-            .lineLimit(2)
-            .fixedSize(horizontal: false, vertical: true)
+      VStack(alignment: .leading, spacing: 4) {
+        ViewThatFits(in: .horizontal) {
+          HStack(alignment: .firstTextBaseline, spacing: 16) {
+            routineTitle(routine).fixedSize()
+            Spacer(minLength: 10)
+            routinePattern(routine).fixedSize()
+          }
+          VStack(alignment: .leading, spacing: 8) {
+            routineTitle(routine)
+              .fixedSize(horizontal: false, vertical: true)
+            routinePattern(routine)
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
         }
 
-        Spacer(minLength: 10)
-
-        Text(routine.patternText)
-          .font(BreatheFont.display(14, weight: .light))
-          .foregroundStyle(scheme.ink)
-          .monospacedDigit()
-          .tracking(0.7)
-          .lineLimit(1)
+        Text(routine.description)
+          .font(BreatheFont.utility(13, weight: .regular, relativeTo: .body))
+          .foregroundStyle(scheme.muted)
+          .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+          .fixedSize(horizontal: false, vertical: true)
       }
+      .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.vertical, 15)
       .contentShape(Rectangle())
     }
@@ -243,6 +241,23 @@ struct LibraryView: View {
         .frame(height: 1)
     }
     .accessibilityLabel("\(routine.name), \(routine.patternText)")
+    .accessibilityAddTraits(routine == selectedRoutine ? .isSelected : [])
+  }
+
+  private func routineTitle(_ routine: Routine) -> some View {
+    Text(routine.name)
+      .font(BreatheFont.display(19, weight: .regular, relativeTo: .headline))
+      .underline(routine == selectedRoutine, color: scheme.ink)
+      .foregroundStyle(scheme.ink)
+  }
+
+  private func routinePattern(_ routine: Routine) -> some View {
+    Text(routine.patternText)
+      .font(BreatheFont.display(14, weight: .light, relativeTo: .caption))
+      .foregroundStyle(scheme.ink)
+      .monospacedDigit()
+      .tracking(0.7)
+      .fixedSize(horizontal: false, vertical: true)
   }
 }
 

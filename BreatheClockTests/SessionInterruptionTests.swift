@@ -114,3 +114,25 @@ final class SessionInterruptionTests: XCTestCase {
     XCTAssertNil(audio.sessionPosition, "The Complete screen must still cancel the audible completion tail")
   }
 }
+
+@MainActor
+final class SettingsRatingTests: XCTestCase {
+  func testRatingRoutesToPlumesWriteReviewPage() throws {
+    var openedURLs: [URL] = []
+    let openURL = OpenURLAction { url in
+      openedURLs.append(url)
+      return .handled // Never launch the App Store from a test.
+    }
+
+    SettingsView.leaveRating(using: openURL)
+
+    XCTAssertEqual(openedURLs.count, 1)
+    let url = try XCTUnwrap(openedURLs.first)
+    let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+    XCTAssertEqual(components.scheme, "https")
+    XCTAssertEqual(components.host, "apps.apple.com")
+    XCTAssertEqual(components.path, "/app/id6786672870")
+    XCTAssertEqual(components.queryItems, [URLQueryItem(name: "action", value: "write-review")])
+    XCTAssertNil(components.fragment)
+  }
+}

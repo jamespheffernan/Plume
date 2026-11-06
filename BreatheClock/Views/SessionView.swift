@@ -14,6 +14,7 @@ struct SessionView: View {
 
   @AppStorage("didSeeBreathPrimer") private var didSeeBreathPrimer = false
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
   @Environment(\.scenePhase) private var scenePhase
   @ObservedObject private var audio = AudioCuePlayer.shared
 
@@ -25,6 +26,7 @@ struct SessionView: View {
   @State private var showPrimer = false
   @State private var preparingAudio = false
   @State private var completionAppeared = false
+  @AccessibilityFocusState private var completionTitleFocused: Bool
 
   private let tick = Timer.publish(every: 0.08, on: .main, in: .common).autoconnect()
   private let introDuration = SessionAudioPlan.introDuration
@@ -45,11 +47,6 @@ struct SessionView: View {
         sessionTimeline
       }
     }
-    // The breathing screen is a fixed full-height composition built around the
-    // orb (whose numeral is geometry-pinned). Text still scales for legibility,
-    // but is bounded so the top bar and the three-up control row stay on one
-    // line instead of truncating at the largest accessibility sizes.
-    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     .onAppear(perform: handleAppear)
     .onDisappear {
       audio.stop()
@@ -76,54 +73,128 @@ struct SessionView: View {
   }
 
   private var sessionTimeline: some View {
-    TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
+    // A frozen clock and the resting completion screen need no display-link
+    // updates. State changes still render immediately and resume the schedule.
+    TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: isPaused || isComplete)) { context in
       let elapsed = effectiveElapsed(at: context.date)
       let sessionLimit = sessionDurationLimit
       let cappedElapsed = sessionLimit.map { min(elapsed, $0) } ?? elapsed
       let introRemaining = introCountdownRemaining(at: context.date)
-      let state = routine.state(at: cappedElapsed)
+      let state = routine.state(at: Self.displaySample(elapsed: elapsed, limit: sessionLimit))
 
-      ZStack {
-        VStack(spacing: 0) {
-          topBar(elapsed: cappedElapsed)
-            .padding(.horizontal, 28)
-            .padding(.top, 22)
+      GeometryReader { geometry in
+        ZStack {
+          if isComplete {
+            completionOverlay
+              .transition(reduceMotion ? .identity : .opacity)
+          } else if geometry.size.height < 700 || (dynamicTypeSize.isAccessibilitySize && audio.playbackError != nil) {
+            constrainedSession(elapsed: cappedElapsed, introRemaining: introRemaining, state: state)
+          } else if dynamicTypeSize.isAccessibilitySize {
+            VStack(spacing: 0) {
+              // Only metadata scrolls. The full-size phase/count and stop controls
+              // stay visible, and the decorative orb never crosses a scroll edge.
+              ScrollView {
+                VStack(spacing: 24) {
+                  topBar(elapsed: cappedElapsed)
+                  if sessionDurationLimit != nil {
+                    progressBar(elapsed: cappedElapsed)
+                  }
+                  if introRemaining <= 0, let stageTitle = state.stageTitle {
+                    stageHeader(stageTitle)
+                  }
+                }
+                .padding(.horizontal, 28)
+                .padding(.vertical, 22)
+              }
+              .scrollBounceBehavior(.basedOnSize)
 
-          // Only a fixed-length session has a meaningful endpoint; at ∞ a
-          // sweeping bar would imply a finish that never comes.
-          if sessionDurationLimit != nil {
-            progressBar(elapsed: cappedElapsed)
-              .padding(.horizontal, 28)
-              .padding(.top, 14)
-          }
+              if introRemaining > 0 {
+                introStage(remaining: introRemaining)
+              } else {
+                pupilStage(state: state)
+              }
 
-          if introRemaining <= 0, let stageTitle = state.stageTitle {
-            stageHeader(stageTitle)
-              .padding(.top, 18)
-          }
-
-          Spacer(minLength: 32)
-
-          if introRemaining > 0 {
-            introStage(remaining: introRemaining)
+              controls
+                .padding(.vertical, 16)
+            }
           } else {
-            pupilStage(state: state)
+            VStack(spacing: 0) {
+              topBar(elapsed: cappedElapsed)
+                .padding(.horizontal, 28)
+                .padding(.top, 22)
+
+              // Only a fixed-length session has a meaningful endpoint; at ∞ a
+              // sweeping bar would imply a finish that never comes.
+              if sessionDurationLimit != nil {
+                progressBar(elapsed: cappedElapsed)
+                  .padding(.horizontal, 28)
+                  .padding(.top, 14)
+              }
+
+              if introRemaining <= 0, let stageTitle = state.stageTitle {
+                stageHeader(stageTitle)
+                  .padding(.top, 18)
+              }
+
+              Spacer(minLength: 32)
+
+              if introRemaining > 0 {
+                introStage(remaining: introRemaining)
+              } else {
+                pupilStage(state: state)
+              }
+
+              Spacer(minLength: 34)
+
+              controls
+                .padding(.bottom, 34)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
           }
-
-          Spacer(minLength: 34)
-
-          controls
-            .padding(.bottom, 34)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityHidden(isComplete)
-
-        if isComplete {
-          completionOverlay
-            .transition(.opacity)
-        }
+        .background(scheme.paper)
       }
-      .background(scheme.paper)
+    }
+  }
+
+  /// The elapsed label and progress reach the endpoint; cyclic breath guidance
+  /// holds its last sample until completion instead of showing another inhale.
+  static func displaySample(elapsed: TimeInterval, limit: TimeInterval?) -> TimeInterval {
+    guard let limit, limit.isFinite, limit > 0 else { return elapsed }
+    return min(elapsed, limit.nextDown)
+  }
+
+  /// On short screens, metadata and errors yield space to the stop controls.
+  /// At accessibility sizes the full-size caption carries the count, so the
+  /// decorative orb can yield its space without shrinking the breathing guide.
+  private func constrainedSession(elapsed: TimeInterval, introRemaining: TimeInterval, state: BreathState) -> some View {
+    VStack(spacing: 0) {
+      ScrollView {
+        VStack(spacing: 24) {
+          topBar(elapsed: elapsed)
+          if sessionDurationLimit != nil { progressBar(elapsed: elapsed) }
+          if introRemaining <= 0, let title = state.stageTitle { stageHeader(title) }
+          if !dynamicTypeSize.isAccessibilitySize {
+            if introRemaining > 0 { introStage(remaining: introRemaining).padding(.horizontal, -28) }
+            else { pupilStage(state: state).padding(.horizontal, -28) }
+          }
+          playbackErrorMessage
+        }
+        .padding(.horizontal, 28)
+        .padding(.vertical, 22)
+      }
+      .scrollBounceBehavior(.basedOnSize)
+
+      if dynamicTypeSize.isAccessibilitySize {
+        phaseCaption(introRemaining > 0 ? "Ready" : state.phase.guidanceLabel,
+                     digit: introRemaining > 0 ? max(1, Int(ceil(introRemaining))) : state.countdownDigit)
+          .padding(.horizontal, 28)
+          .padding(.vertical, 16)
+      }
+      controlButtons
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.horizontal, 28)
+        .padding(.vertical, 16)
     }
   }
 
@@ -132,23 +203,28 @@ struct SessionView: View {
   }
 
   private func topBar(elapsed: TimeInterval) -> some View {
-    HStack(alignment: .firstTextBaseline) {
+    let layout = dynamicTypeSize.isAccessibilitySize
+      ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+      : AnyLayout(HStackLayout(alignment: .firstTextBaseline))
+    return layout {
       Text(routine.name)
-        .font(BreatheFont.display(17, weight: .regular, italic: true))
+        .font(BreatheFont.display(17, weight: .regular, relativeTo: .headline))
         .foregroundStyle(scheme.ink)
-        .lineLimit(1)
-        .minimumScaleFactor(0.75)
+        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+        .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 1 : 0.75)
+        .fixedSize(horizontal: false, vertical: true)
 
-      Spacer(minLength: 12)
+      if !dynamicTypeSize.isAccessibilitySize { Spacer(minLength: 12) }
 
       Text("\(elapsed.clockText) · \(sessionDurationText)")
-        .font(BreatheFont.utility(11, weight: .medium))
+        .font(BreatheFont.utility(11, weight: .medium, relativeTo: .caption))
         .foregroundStyle(scheme.muted)
         .tracking(2.5)
         .textCase(.uppercase)
         .monospacedDigit()
-        .lineLimit(1)
-        .minimumScaleFactor(0.75)
+        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+        .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 1 : 0.75)
+        .fixedSize(horizontal: false, vertical: true)
         .accessibilityLabel(
           sessionDurationLimit == nil
             ? "Elapsed \(elapsed.clockText)"
@@ -156,6 +232,7 @@ struct SessionView: View {
         )
         .accessibilityIdentifier("session-time")
     }
+    .frame(maxWidth: .infinity, alignment: .leading)
   }
 
   private func progressBar(elapsed: TimeInterval) -> some View {
@@ -179,8 +256,8 @@ struct SessionView: View {
   /// The breathing orb: a quiet vessel ring, a soft halo that swells, and a
   /// gradient sphere with the count nested inside it. At the bottom of an
   /// exhale the sphere dissolves (fillOpacity → 0) into the empty ring while the
-  /// numeral crossfades paper ⇄ ink, so the count stays readable whether the orb
-  /// is a dark disc on light paper or a light disc on a dark (inverted) scheme.
+  /// numeral switches between opaque paper and ink. It stays readable on both
+  /// a dark disc on light paper and a light disc on dark paper.
   @ViewBuilder
   private func breathOrb(size: CGFloat, scale: Double, halo: Double, fillOpacity: Double, digit: Int) -> some View {
     Circle()
@@ -197,7 +274,7 @@ struct SessionView: View {
     Circle()
       .fill(
         RadialGradient(
-          colors: [scheme.ink.opacity(0.86), scheme.ink],
+          colors: [scheme.ink.opacity(0.96), scheme.ink],
           center: UnitPoint(x: 0.5, y: 0.42),
           startRadius: 0,
           endRadius: size * 0.6
@@ -207,24 +284,22 @@ struct SessionView: View {
       .scaleEffect(scale)
       .opacity(fillOpacity)
 
-    ZStack {
-      Text("\(digit)")
-        .foregroundStyle(scheme.ink)
-      Text("\(digit)")
-        .foregroundStyle(scheme.paper)
-        .opacity(fillOpacity)
-    }
-    .font(BreatheFont.display(size * 0.52, weight: .ultraLight))
-    // The numeral is sized off the orb's geometry, not the text size, so pin it
-    // to the default content category — letting it scale would overflow the disc.
-    .dynamicTypeSize(.large)
-    .monospacedDigit()
-    // Tracking trims trailing advance; on a lone glyph that just pulls it off
-    // centre, so only tighten multi-digit counts (long holds reach 2 digits).
-    .tracking(digit >= 10 ? -4 : 0)
-    .scaleEffect(scale)
-    .id(digit)
-    .transition(.opacity.animation(.easeOut(duration: reduceMotion ? 0 : 0.22)))
+    // Crossfading foregrounds makes the numeral match the sphere midway.
+    // Keep one opaque polarity. Thresholds include the gradient and halo:
+    // the five palettes retain at least 3:1 throughout the fill range.
+    Text("\(digit)")
+      .foregroundStyle(fillOpacity < (scheme.inverted ? 0.44 : 0.565) ? scheme.ink : scheme.paper)
+      .font(BreatheFont.display(size * 0.52, weight: .ultraLight, relativeTo: .largeTitle))
+      // The numeral is sized off the orb's geometry, not the text size, so pin it
+      // to the default content category — letting it scale would overflow the disc.
+      .dynamicTypeSize(.large)
+      .monospacedDigit()
+      // Tracking trims trailing advance; on a lone glyph that just pulls it off
+      // centre, so only tighten multi-digit counts (long holds reach 2 digits).
+      .tracking(digit >= 10 ? -4 : 0)
+      .scaleEffect(scale)
+      // Replace the count without fading its strokes into the sphere.
+      .contentTransition(.identity)
   }
 
   private func introStage(remaining: TimeInterval) -> some View {
@@ -237,9 +312,10 @@ struct SessionView: View {
     let settle = 0.5 - 0.5 * cos(Double.pi * remainingFraction)
     let scale = reduceMotion ? 0.4 : orbRestScale + 0.08 * settle
 
-    return VStack(spacing: 28) {
+    return VStack(spacing: dynamicTypeSize.isAccessibilitySize ? 12 : 28) {
+      if dynamicTypeSize.isAccessibilitySize { phaseCaption("Ready", digit: digit) }
       GeometryReader { geometry in
-        let size = min(geometry.size.width * 0.78, 288)
+        let size = min(geometry.size.width * 0.78, dynamicTypeSize.isAccessibilitySize ? 144 : 288)
 
         ZStack {
           breathOrb(
@@ -255,23 +331,21 @@ struct SessionView: View {
         .accessibilityLabel("Get ready")
         .accessibilityValue("\(digit)")
       }
-      .frame(height: 304)
+      .frame(height: dynamicTypeSize.isAccessibilitySize ? 176 : 304)
+      .accessibilityHidden(dynamicTypeSize.isAccessibilitySize)
 
-      Text("Ready")
-        .font(BreatheFont.utility(12, weight: .light))
-        .foregroundStyle(scheme.muted)
-        .tracking(5)
-        .textCase(.uppercase)
-        .frame(height: 16)
-        .accessibilityHidden(true)
+      if !dynamicTypeSize.isAccessibilitySize { phaseCaption("Ready", digit: digit) }
     }
     .padding(.horizontal, 28)
   }
 
   private func pupilStage(state: BreathState) -> some View {
-    VStack(spacing: 28) {
+    VStack(spacing: dynamicTypeSize.isAccessibilitySize ? 12 : 28) {
+      if dynamicTypeSize.isAccessibilitySize {
+        phaseCaption(state.phase.guidanceLabel, digit: state.countdownDigit)
+      }
       GeometryReader { geometry in
-        let size = min(geometry.size.width * 0.78, 288)
+        let size = min(geometry.size.width * 0.78, dynamicTypeSize.isAccessibilitySize ? 144 : 288)
         let raw = reduceMotion ? 0.5 : state.pupilScale
         // The orb grows straight from its rest size the instant the breath
         // turns — no frozen dead zone where it fills before it moves.
@@ -298,155 +372,201 @@ struct SessionView: View {
         .accessibilityLabel(state.phase.guidanceLabel)
         .accessibilityValue("\(state.countdownDigit)")
       }
-      .frame(height: 304)
+      .frame(height: dynamicTypeSize.isAccessibilitySize ? 176 : 304)
+      .accessibilityHidden(dynamicTypeSize.isAccessibilitySize)
 
-      Text(state.phase.guidanceLabel)
-        .font(BreatheFont.utility(12, weight: .light))
-        .foregroundStyle(scheme.muted)
-        .tracking(5)
-        .textCase(.uppercase)
-        .id(state.phase.guidanceLabel)
-        .transition(.opacity.animation(.easeInOut(duration: reduceMotion ? 0 : 0.18)))
-        .frame(height: 16)
-        .accessibilityHidden(true)
+      if !dynamicTypeSize.isAccessibilitySize {
+        phaseCaption(state.phase.guidanceLabel, digit: state.countdownDigit)
+      }
     }
     .padding(.horizontal, 28)
+  }
+
+  private func phaseCaption(_ title: String, digit: Int) -> some View {
+    Text(dynamicTypeSize.isAccessibilitySize ? "\(title) · \(digit)" : title)
+      .font(BreatheFont.utility(12, weight: .light, relativeTo: .headline))
+      .foregroundStyle(scheme.muted)
+      .tracking(5)
+      .textCase(.uppercase)
+      .id(dynamicTypeSize.isAccessibilitySize ? "guidance" : title)
+      .transition(reduceMotion ? .identity : .opacity.animation(.easeOut(duration: 0.18)))
+      .multilineTextAlignment(.center)
+      .fixedSize(horizontal: false, vertical: true)
+      .frame(minHeight: 16)
+      .accessibilityHidden(!dynamicTypeSize.isAccessibilitySize)
   }
 
   private func stageHeader(_ title: String) -> some View {
     VStack(spacing: 5) {
       Text("Stage")
-        .font(BreatheFont.utility(9, weight: .light))
+        .font(BreatheFont.utility(9, weight: .light, relativeTo: .caption))
         .foregroundStyle(scheme.muted)
         .tracking(3)
         .textCase(.uppercase)
       Text(title)
-        .font(BreatheFont.display(21, weight: .regular, italic: true))
+        .font(BreatheFont.display(21, weight: .regular, relativeTo: .title2))
         .foregroundStyle(scheme.ink)
         .id(title)
-        .transition(.opacity.animation(.easeInOut(duration: reduceMotion ? 0 : 0.4)))
+        .transition(reduceMotion ? .identity : .opacity.animation(.easeOut(duration: 0.24)))
+        .multilineTextAlignment(.center)
+        .fixedSize(horizontal: false, vertical: true)
     }
     .frame(maxWidth: .infinity)
   }
 
+  @ViewBuilder
+  private var playbackErrorMessage: some View {
+    if let error = audio.playbackError {
+      Text(error)
+        .font(BreatheFont.utility(12, weight: .regular, relativeTo: .body))
+        .foregroundStyle(scheme.ink)
+        .multilineTextAlignment(.center)
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityIdentifier("session-error")
+    }
+  }
+
   private var controls: some View {
     VStack(spacing: 12) {
-      if let error = audio.playbackError {
-        Text(error)
-          .font(BreatheFont.utility(12, weight: .regular))
-          .foregroundStyle(scheme.ink)
-          .multilineTextAlignment(.center)
-      }
-      HStack(spacing: 12) {
-        ghostControl("Restart", action: restart)
-        primaryControl(preparingAudio ? "Preparing…" : (isPaused ? "Resume" : "Pause"), action: togglePause)
-          .disabled(preparingAudio)
-          .accessibilityIdentifier("session-primary")
-        ghostControl("End", action: onEnd)
-      }
+      playbackErrorMessage
+      controlButtons
     }
     .padding(.horizontal, 28)
     .disabled(isComplete)
     .opacity(isComplete ? 0.35 : 1)
   }
 
+  private var controlButtons: some View {
+    controlLayout {
+      ghostControl("Restart", action: restart)
+      primaryControl(preparingAudio ? "Preparing…" : (isPaused ? "Resume" : "Pause"), action: togglePause)
+        .disabled(preparingAudio)
+        .accessibilityIdentifier("session-primary")
+      ghostControl("End", action: onEnd)
+    }
+  }
+
+  private var controlLayout: AnyLayout {
+    dynamicTypeSize.isAccessibilitySize
+      ? AnyLayout(VStackLayout(spacing: 12))
+      : AnyLayout(HStackLayout(spacing: 12))
+  }
+
   /// The filled capsule that anchors the control row — the one action most
   /// likely wanted mid-session, so it reads as the obvious target.
   private func primaryControl(_ title: String, action: @escaping () -> Void) -> some View {
     Button(action: action) {
-      Text(title)
-        .font(BreatheFont.utility(12, weight: .semibold))
-        .tracking(2.4)
-        .textCase(.uppercase)
+      BreatheButtonText(title: title, font: BreatheFont.utility(12, weight: .semibold, relativeTo: .subheadline), tracking: 2.4, uppercase: true)
+        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+        .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 1 : 0.65)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.horizontal, 10)
+        .padding(.vertical, dynamicTypeSize.isAccessibilitySize ? 14 : 0)
         .foregroundStyle(scheme.paper)
         .frame(maxWidth: .infinity)
-        .frame(height: 52)
+        .frame(minHeight: 52)
         .background(Capsule().fill(scheme.ink))
+        .contentShape(Capsule())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(BreathePressStyle())
   }
 
   /// Quieter outlined capsules either side of the primary action.
   private func ghostControl(_ title: String, action: @escaping () -> Void) -> some View {
     Button(action: action) {
-      Text(title)
-        .font(BreatheFont.utility(11, weight: .regular))
-        .tracking(2.4)
-        .textCase(.uppercase)
+      BreatheButtonText(title: title, font: BreatheFont.utility(11, weight: .regular, relativeTo: .subheadline), tracking: 2.4, uppercase: true)
+        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+        .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 1 : 0.65)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.horizontal, 10)
+        .padding(.vertical, dynamicTypeSize.isAccessibilitySize ? 14 : 0)
         .foregroundStyle(scheme.ink)
         .frame(maxWidth: .infinity)
-        .frame(height: 52)
+        .frame(minHeight: 52)
         .overlay(Capsule().stroke(scheme.ink.opacity(0.25), lineWidth: 1))
         .contentShape(Capsule())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(BreathePressStyle())
   }
 
   private var completionOverlay: some View {
-    VStack(spacing: 26) {
-      Spacer()
+    GeometryReader { geometry in
+      ScrollView {
+        VStack(spacing: 26) {
+          Spacer()
 
-      GeometryReader { geometry in
-        let size = min(geometry.size.width * 0.78, 288)
+          GeometryReader { geometry in
+            let size = min(geometry.size.width * 0.78, 288)
 
-        ZStack {
-          // The same vessel ring as the breathing orb, now come to rest.
-          Circle()
-            .stroke(scheme.ink.opacity(0.4), lineWidth: 1)
-            .frame(width: size, height: size)
+            ZStack {
+              // The same vessel ring as the breathing orb, now come to rest.
+              Circle()
+                .stroke(scheme.ink.opacity(0.4), lineWidth: 1)
+                .frame(width: size, height: size)
 
-          Circle()
-            .fill(scheme.ink)
-            .frame(width: size, height: size)
-            .scaleEffect(0.62)
-            .blur(radius: 26)
-            .opacity(0.12)
+              Circle()
+                .fill(scheme.ink)
+                .frame(width: size, height: size)
+                .scaleEffect(0.62)
+                .blur(radius: 26)
+                .opacity(0.12)
 
-          Image(systemName: "checkmark")
-            .font(.system(size: size * 0.26, weight: .ultraLight))
-            .foregroundStyle(scheme.ink)
-            .scaleEffect(completionAppeared ? 1 : 0.82)
-            .opacity(completionAppeared ? 1 : 0)
+              Image(systemName: "checkmark")
+                .font(.system(size: size * 0.26, weight: .ultraLight))
+                .foregroundStyle(scheme.ink)
+                .scaleEffect(completionAppeared || reduceMotion ? 1 : 0.96)
+                .opacity(completionAppeared || reduceMotion ? 1 : 0)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+          }
+          .frame(height: 304)
+          .accessibilityHidden(true)
+
+          VStack(spacing: 8) {
+            Text("Complete")
+              .font(BreatheFont.display(38, weight: .light, relativeTo: .largeTitle))
+              .foregroundStyle(scheme.ink)
+              .fixedSize(horizontal: false, vertical: true)
+              .accessibilityAddTraits(.isHeader)
+              .accessibilityFocused($completionTitleFocused)
+            Text(routine.name)
+              .font(BreatheFont.utility(12, weight: .regular, relativeTo: .headline))
+              .foregroundStyle(scheme.muted)
+              .tracking(3)
+              .textCase(.uppercase)
+              .fixedSize(horizontal: false, vertical: true)
+
+            if needsGrounding {
+              Text("Stay where you are for a moment. Let your breath find its own rhythm before you get up.")
+                .font(BreatheFont.utility(13, weight: .light, relativeTo: .body))
+                .foregroundStyle(scheme.muted)
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 300)
+                .padding(.top, 10)
+            }
+          }
+          .multilineTextAlignment(.center)
+          .padding(.horizontal, 28)
+
+          Spacer()
+
+          controlLayout {
+            ghostControl("Restart", action: restart)
+            primaryControl("Done", action: onEnd)
+          }
+          .padding(.horizontal, 28)
+          .padding(.bottom, 34)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, minHeight: geometry.size.height)
       }
-      .frame(height: 304)
-
-      VStack(spacing: 8) {
-        Text("Complete")
-          .font(BreatheFont.display(38, weight: .light, italic: true))
-          .foregroundStyle(scheme.ink)
-        Text(routine.name)
-          .font(BreatheFont.utility(12, weight: .regular))
-          .foregroundStyle(scheme.muted)
-          .tracking(3)
-          .textCase(.uppercase)
-
-        if needsGrounding {
-          Text("Stay where you are for a moment. Let your breath find its own rhythm before you get up.")
-            .font(BreatheFont.utility(13, weight: .light))
-            .foregroundStyle(scheme.muted)
-            .multilineTextAlignment(.center)
-            .lineSpacing(4)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: 300)
-            .padding(.top, 10)
-        }
-      }
-
-      Spacer()
-
-      HStack(spacing: 12) {
-        ghostControl("Restart", action: restart)
-        primaryControl("Done", action: onEnd)
-      }
-      .padding(.horizontal, 28)
-      .padding(.bottom, 34)
+      .scrollBounceBehavior(.basedOnSize)
     }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(scheme.paper)
     .onAppear {
-      withAnimation(reduceMotion ? nil : .easeOut(duration: 0.45).delay(0.25)) {
+      completionTitleFocused = true
+      withAnimation(reduceMotion ? nil : .easeOut(duration: 0.24)) {
         completionAppeared = true
       }
     }
@@ -555,7 +675,7 @@ struct SessionView: View {
 
   private func completeSession() {
     guard !isComplete else { return }
-    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.6)) {
+    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.24)) {
       isComplete = true
     }
     BreathHaptics.shared.stop()
@@ -632,7 +752,11 @@ private struct BreathPrimerView: View {
   let reduceMotion: Bool
   let onBegin: () -> Void
 
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
   @State private var start = Date()
+  // Fraunces' Begin glyphs sit low within its line box; scale the small
+  // optical lift with the same headline curve as the font.
+  @ScaledMetric(relativeTo: .headline) private var beginOpticalLift = 2.2
 
   private struct Step {
     let label: String
@@ -671,86 +795,100 @@ private struct BreathPrimerView: View {
   }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 0) {
-      Spacer(minLength: 48)
+    GeometryReader { geometry in
+      ScrollView {
+        VStack(alignment: .leading, spacing: 0) {
+          Spacer(minLength: 48)
 
-      Text("How it works")
-        .font(BreatheFont.utility(11, weight: .medium))
-        .foregroundStyle(scheme.muted)
-        .tracking(3)
-        .textCase(.uppercase)
-        .padding(.bottom, 14)
-
-      Text("Follow the circle.")
-        .font(BreatheFont.display(32, weight: .light, italic: true))
-        .foregroundStyle(scheme.ink)
-        .padding(.bottom, 10)
-
-      Text("It grows as you breathe in, rests while you hold, and shrinks as you breathe out. The number inside counts the seconds.")
-        .font(BreatheFont.utility(14, weight: .regular))
-        .foregroundStyle(scheme.ink)
-        .lineSpacing(5)
-        .fixedSize(horizontal: false, vertical: true)
-
-      Spacer(minLength: 20)
-
-      TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
-        let result = sample(at: context.date.timeIntervalSince(start))
-        let scale = reduceMotion ? 0.66 : result.scale
-
-        VStack(spacing: 26) {
-          GeometryReader { geometry in
-            let size = min(geometry.size.width * 0.6, 220)
-            ZStack {
-              Circle()
-                .stroke(scheme.ink.opacity(0.4), lineWidth: 1)
-                .frame(width: size, height: size)
-              Circle()
-                .fill(scheme.ink)
-                .frame(width: size, height: size)
-                .scaleEffect(scale)
-              // The count the copy promises, nested in the disc like the live orb
-              // (paper on the ink disc, matching the session orb's numeral).
-              Text("\(result.digit)")
-                .font(BreatheFont.display(size * 0.2, weight: .ultraLight))
-                // Geometry-driven like the live orb numeral — pin to default size.
-                .dynamicTypeSize(.large)
-                .foregroundStyle(scheme.paper)
-                .monospacedDigit()
-                .id(result.digit)
-                .transition(.opacity.animation(.easeOut(duration: reduceMotion ? 0 : 0.22)))
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-          }
-          .frame(height: 236)
-
-          Text(result.label)
-            .font(BreatheFont.utility(12, weight: .light))
+          Text("How it works")
+            .font(BreatheFont.utility(11, weight: .medium, relativeTo: .headline))
             .foregroundStyle(scheme.muted)
-            .tracking(5)
+            .tracking(3)
             .textCase(.uppercase)
-            .id(result.label)
-            .transition(.opacity.animation(.easeInOut(duration: reduceMotion ? 0 : 0.2)))
-            .frame(height: 16)
+            .padding(.bottom, 14)
+
+          Text("Follow the circle.")
+            .font(BreatheFont.display(32, weight: .light, relativeTo: .title))
+            .foregroundStyle(scheme.ink)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.bottom, 10)
+
+          Text("It grows as you breathe in, rests while you hold, and shrinks as you breathe out. The number inside counts the seconds.")
+            .font(BreatheFont.utility(14, weight: .regular, relativeTo: .body))
+            .foregroundStyle(scheme.ink)
+            .lineSpacing(5)
+            .fixedSize(horizontal: false, vertical: true)
+
+          Spacer(minLength: 20)
+
+          TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
+            let result = sample(at: context.date.timeIntervalSince(start))
+            let scale = reduceMotion ? 0.66 : result.scale
+
+            VStack(spacing: 26) {
+              GeometryReader { geometry in
+                let size = min(geometry.size.width * 0.6, 220)
+                ZStack {
+                  Circle()
+                    .stroke(scheme.ink.opacity(0.4), lineWidth: 1)
+                    .frame(width: size, height: size)
+                  Circle()
+                    .fill(scheme.ink)
+                    .frame(width: size, height: size)
+                    .scaleEffect(scale)
+                  // The count the copy promises, nested in the disc like the live orb
+                  // (paper on the ink disc, matching the session orb's numeral).
+                  Text("\(result.digit)")
+                    .font(BreatheFont.display(size * 0.2, weight: .ultraLight, relativeTo: .largeTitle))
+                    // Geometry-driven like the live orb numeral — pin to default size.
+                    .dynamicTypeSize(.large)
+                    .foregroundStyle(scheme.paper)
+                    .monospacedDigit()
+                    .contentTransition(.identity)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+              }
+              .frame(height: 236)
+              .accessibilityHidden(true)
+
+              Text(dynamicTypeSize.isAccessibilitySize ? "\(result.label) · \(result.digit)" : result.label)
+                .font(BreatheFont.utility(12, weight: .light, relativeTo: .headline))
+                .foregroundStyle(scheme.muted)
+                .tracking(5)
+                .textCase(.uppercase)
+                .id(dynamicTypeSize.isAccessibilitySize ? "guidance" : result.label)
+                .transition(reduceMotion ? .identity : .opacity.animation(.easeOut(duration: 0.2)))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(minHeight: 16)
+                .accessibilityLabel(result.label)
+                .accessibilityValue("\(result.digit)")
+            }
+          }
+
+          Spacer(minLength: 20)
+
+          Button(action: onBegin) {
+            Text("Begin")
+              .font(BreatheFont.display(18, weight: .regular, relativeTo: .headline))
+              .offset(y: -beginOpticalLift)
+              .foregroundStyle(scheme.paper)
+              .multilineTextAlignment(.center)
+              .fixedSize(horizontal: false, vertical: true)
+              .padding(.horizontal, 20)
+              .padding(.vertical, 14)
+              .frame(maxWidth: .infinity, minHeight: 62)
+              .background(Capsule().fill(scheme.ink))
+          }
+          .buttonStyle(.plain)
+
+          Spacer(minLength: 24)
         }
+        .padding(.horizontal, 30)
+        .frame(maxWidth: .infinity, minHeight: geometry.size.height)
       }
-
-      Spacer(minLength: 20)
-
-      Button(action: onBegin) {
-        Text("Begin")
-          .font(BreatheFont.display(18, weight: .regular, italic: true))
-          .foregroundStyle(scheme.paper)
-          .frame(maxWidth: .infinity)
-          .frame(height: 62)
-          .background(Capsule().fill(scheme.ink))
-      }
-      .buttonStyle(.plain)
-
-      Spacer(minLength: 24)
+      .scrollBounceBehavior(.basedOnSize)
     }
-    .padding(.horizontal, 30)
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(scheme.paper)
   }
 }
